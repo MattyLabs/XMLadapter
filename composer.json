@@ -1,0 +1,22 @@
+{
+    "name": "mattylabs/xmladapter",
+    "description": "A simple library to convert name=value pairs into Elasticsearch queries",
+    "homepage": "https://github.com/MattyLabs/XMLadapter",
+    "type": "library",
+    "license": "Apache-2.0",
+    "authors": [
+      {
+        "name": "MattyLabs",
+        "email": "mattyp@pollocks.london",
+        "role": "Developer"
+      }
+    ],
+	"autoload": {
+        "psr-4": {
+            "MattyLabs\\XMLAdapter\\": "src"
+        }
+    },
+    "require": {
+      "php": ">=5.6"
+    }
+}
