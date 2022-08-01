@@ -23,7 +23,7 @@
         {
             "packagist": false,
             "type": "vcs",
-            "url": "https://github.com/mattylabs/xmladapter"           
+            "url": "https://github.com/mattylabs/xmladapter.git"           
         }
     ]       
 	
