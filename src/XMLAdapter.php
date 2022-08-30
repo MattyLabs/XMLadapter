@@ -167,6 +167,8 @@
                     //'min_score'   => 10,  // removes tail from resultset
                     'explain' => false,
                     'profile' => false,
+                    'version' => false,
+					'seq_no_primary_term' => false,
                     'track_total_hits' => ($this->config->get('dbm.track_total_hits')) ?: true,
                     'query' => [
                         'bool' => [
