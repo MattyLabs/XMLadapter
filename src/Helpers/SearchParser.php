@@ -413,7 +413,7 @@
                     $val = str_replace(">", '&gt;', $val);
                     $val = str_replace("<=", '&lte;', $val);
                     $val = str_replace(">=", '&gte;', $val);
-		    $val = str_replace("{63}", '?', $val);
+					$val = str_replace("{63}", '?', $val);
 
                     if(substr_count($val, '"') % 2 != 0){
                         // if there are an odd number of quotes now, get rid of them all!
@@ -1107,6 +1107,10 @@
             }
 
             $log = $this->log;
+             if( !empty($this->query_params['must']) and ($this->query_params['must'] == 'false' or $this->query_params['must'] == 'off') ){
+                $log::info("MUST query switched off..", get_class());
+                return [];
+            }
             $log::info("Processing MUST query..", get_class());
 
         // What's all the fuzz
@@ -1154,7 +1158,6 @@
                     'query_string' => [
 
                         'query' => $this->query_params['search_query'],
-                        'default_field' => 'cindex' , // if no fields are specified
                         'default_operator' =>  $this->config->get('dbm.default_search_operator') ?: 'AND',
                         'boost' => 1.0,
                         'fuzziness' => $fuzz,	// Seems to be OK with ~1|2 on each term as well
@@ -1164,11 +1167,11 @@
 
                 ];
 
-
             // Minimum Should Match
                 if( !empty($this->query_params['msm'])){
                     Arr::set($must,'query_string.minimum_should_match', $this->query_params['msm']);
                 }
+
             // ISBN Query
                 if( $this->checkISBNQuery() == true ){
                     Arr::set($must,'query_string.default_operator', 'OR');
@@ -1177,7 +1180,7 @@
                 return $must;
             }
 
-        // Last resort Match Query
+        // Last resort Multi Match Query
             $must = [
 
                 'multi_match' => [
@@ -1220,6 +1223,11 @@
                 return [];
             }
 
+			 if( !empty($this->query_params['should']) and ($this->query_params['should'] == 'false' or $this->query_params['should'] == 'off') ){
+                $log::info("SHOULD query switched off..", get_class());
+                return [];
+            }
+        
             $log::info("Processing SHOULD query.", get_class());
             $should = $this->config->get('dbm.elastic_should');
 
@@ -1396,6 +1404,10 @@
 
             $rescore = null;
             $log = $this->log;
+			 if( !empty($this->query_params['rescore']) and ($this->query_params['rescore'] == 'false' or $this->query_params['rescore'] == 'off') ){
+                $log::info("RESCORE query switched off..", get_class());
+                return [];
+            }
             $collapse_field = @$this->query_params['collapse'] ?: $this->config->get('dbm.collapse') ?: '';
             if($this->config->get('dbm.elastic_rescore_show') and $this->checkISBNQuery() == false and empty($collapse_field) and empty($this->query_params['sort']) ){
 
