@@ -3,7 +3,7 @@
     "description": "A simple library to convert name=value pairs into Elasticsearch queries",
     "homepage": "https://github.com/MattyLabs/XMLadapter",
     "type": "library",
-    "license": "Apache-2.0",
+    "license": "Creative Commons Attribution-NonCommercial (CC-BY-NC)",
     "authors": [
       {
         "name": "MattyLabs",
