@@ -32,11 +32,10 @@
          *  e.g. displayDate("l, jS F Y", 0, '20250101') > format specific date
          *  e.g. displayDate('l, jS F Y') - 'Monday, 8th April 2013'
          *
+         * @param string $date
          * @param string $format
          * @param int $offset
-         * @param string $date
          * @return mixed
-         * @throws \Exception
          */
         public static function displayDate($format = 'Ymd',  $offset = 0, $date = null) {
 

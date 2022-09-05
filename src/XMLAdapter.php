@@ -167,8 +167,8 @@
                     //'min_score'   => 10,  // removes tail from resultset
                     'explain' => false,
                     'profile' => false,
-                    'version' => false,
-					'seq_no_primary_term' => false,
+					'version' => true,
+					//'seq_no_primary_term' => true,    // version 7+ only
                     'track_total_hits' => ($this->config->get('dbm.track_total_hits')) ?: true,
                     'query' => [
                         'bool' => [
@@ -311,13 +311,10 @@
             }
 
             //$docs = Arr::val($results, 'hits.total.value') ?? Arr::val($results, 'hits.total');
-            if( !empty(Arr::val($results, 'hits.total.value')) ){
-
-                $docs = Arr::val($results, 'hits.total.value');
-
+            if( isset($results['hits']['total']['value']) ){
+                $docs = $results['hits']['total']['value'];
             }else{
-
-                $docs = Arr::val($results, 'hits.total');
+                $docs = $results['hits']['total'];
             }
 
             $log::info("..search query completed. Docs found [$docs]");
