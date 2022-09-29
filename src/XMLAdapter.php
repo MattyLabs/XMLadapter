@@ -6,19 +6,12 @@
     use MattyLabs\XMLAdapter\Common\ResultsInfoJSON2;
     use MattyLabs\XMLAdapter\Common\ResultsInfoDoc;
     use MattyLabs\XMLAdapter\Common\ResultsInfoHTML;
+    use MattyLabs\XMLAdapter\Exceptions\GeneralException;
     use MattyLabs\XMLAdapter\Helpers\SearchParser;
     use MattyLabs\XMLAdapter\Helpers\Arr;
 
-    use \Elasticsearch\ClientBuilder;
-    use \Elasticsearch\Common\Exceptions\BadRequest400Exception;
-    use \Elasticsearch\Common\Exceptions\Missing404Exception;
-    use \Elasticsearch\Common\Exceptions\ServerErrorResponseException;
-    use \Elasticsearch\Common\Exceptions\NoNodesAvailableException;
-
-
-
-    use MattyLabs\XMLAdapter\Logger\SimpleLogger;
-    //use Symfony\Component\HttpClient\Psr18Client;
+	use \Elastic\Elasticsearch\ClientBuilder;
+	use \Symfony\Component\HttpClient\Psr18Client;
 
 
     /**
@@ -34,19 +27,19 @@
         /**
          * @var Config|false
          */
-        protected  $config;
+        protected Config $config;
 
         /**
          * @var Logger\SimpleLogger
          */
-        protected  $log;
+        protected Logger\SimpleLogger $log;
 
 
         /**
          * Local var for SearchParser
          * @var
          */
-        protected $query;
+        protected Helpers\SearchParser $query;
 
         /**
          * Elasticsearch Client
@@ -60,10 +53,11 @@
          * @param string|null $url
          * @param array|null $params
          */
-        public function __construct( $url = null, array $params = null)
+        public function __construct(string $url = null, array $params = null)
         {
 
-            $this->log = new SimpleLogger();
+            $this->log = new Logger\SimpleLogger();
+
             $this->config = Config::instance();
 
             $this->config->init($url, $params);
@@ -77,28 +71,27 @@
          */
         public function search($format = null)
         {
-            $log = $this->log;
+
             //print_r($this->config);die;
             if (!empty($this->config->get('params.dbm'))) {
 
                 $path = $this->config->get('params.site_root') . "" . $this->config->get('sitename') . "/include/config/{$this->config->get('params.dbm')}-dbm.inc";
-
-                $log::info("Loading DBM >> config.dbm: [$path]", get_class());
+                $this->log::info("Loading DBM >> config.dbm: [$path]", get_class());
                 if(file_exists($path)){
 
                     $arr = require($path);
                     $this->config->set('dbm', $arr);
-                    $log::info("DBM index: [{$this->config->get('dbm.dbm_index')}]", get_class());
+                    $this->log::info("DBM index: [{$this->config->get('dbm.dbm_index')}]", get_class());
 
                 }else{
 
-                    $log::error("Failed to load DBM [{$this->config->get('params.dbm')}]. Please check.", get_class());
+                    $this->log::error("Failed to load DBM [{$this->config->get('params.dbm')}]. Please check.", get_class());
                     return;
                 }
 
             } else {
 
-                $log::error("No DBM! You must set '&DBM=siteName-indexName'", get_class());
+                $this->log::error("No DBM! You must set '&DBM=siteName-indexName'", get_class());
                 return;
 
             }
@@ -111,47 +104,51 @@
             $this->query = new SearchParser();
 
         // ELASTIC CLIENT
-            $log::info('Elastic Client initialise..', get_class());
+            $this->log::info('Elastic Client initialise..', get_class());
+            try {
 
-            $client = $this->query->get('elastic_client');
-            unset($client['basicAuthentication']);
             //print_r( $this->config->get('params.elastic_client_config.hosts') );die;
             //print_r( $this->query->get('elastic_client') ); die;
-            //print_r($this->client->info());//die;
-            $this->client = ClientBuilder::fromConfig( $client );
+                $this->client = ClientBuilder::fromConfig( $this->query->get('elastic_client') );
+				//print_r($this->client->info());die;
+				//$this->client = ClientBuilder::create()
+				//	->setHosts($this->config->get('params.elastic_client_config.hosts'))
+				//	->setHttpClient(new Psr18Client)
+				//	->build();
+				//$this->client->setHttpClient(new Psr18Client);
 
-            // Quicker to get the version from the client than via REST call to host
-            try {
-                // it appears that the Exception isn't thrown until you try to use the client
-                $info = $this->client->info();
-
-            } catch ( NoNodesAvailableException $e ){
+            } catch ( \Elastic\Elasticsearch\Exception\NoNodesAvailableException $e ){
 
                 $m = $e->getMessage();
-                $log::error($m, 'Search Exception');
+                $m = json_encode(json_decode($m,true), JSON_PRETTY_PRINT);
+                $this->log::error($m, 'Search Exception');
                 return;
 
             }
 
+
+            // Quicker to get the version from the client than via REST call to host
+
+            $info = $this->client->info();
             $this->query->set('elastic_version', $info['version']['number']);
-            $log::info("elastic_version: [{$info['version']['number']}]", get_class());
+            $this->log::info("elastic_version: [{$info['version']['number']}]", get_class());
 
             // Get All QueryParams
             //print_r($this->query->getQueryParams()); //die;
             //print_r($this->config);die;
             //print_r($this->query->get('params.idx') );die;
 
-            $log::info("search_query: [{$this->query->get('search_query')}]", get_class());
-            $log::info("search_terms: [{$this->query->get('search_terms')}]", get_class());
-            //$x = print_r($this->query->get('search_array'), true); $log::info("search_array: [$x]", get_class());
-            $log::info("search_fields: [{$this->query->get('search_fields')}]", get_class());
+            $this->log::info("search_query: [{$this->query->get('search_query')}]", get_class());
+            $this->log::info("search_terms: [{$this->query->get('search_terms')}]", get_class());
+            //$x = print_r($this->query->get('search_array'), true); $this->log::info("search_array: [$x]", get_class());
+            $this->log::info("search_fields: [{$this->query->get('search_fields')}]", get_class());
 
             if(!empty($this->config->get('params.idx'))){
                 $idx = $this->config->get('params.idx');
-                $log::info("searching index: [$idx] (params.idx)", get_class());
+                $this->log::info("searching index: [$idx] (params.idx)", get_class());
             }else{
                 $idx = $this->config->get('dbm.dbm_index');
-                $log::info("searching index: [$idx] (dbm.dbm_index)", get_class());
+                $this->log::info("searching index: [$idx] (dbm.dbm_index)", get_class());
             }
 
 
@@ -206,7 +203,7 @@
             if (intval($this->query->get('elastic_version')) >= 7 ){
 
                 if(isset($query['body']['aggs'])){
-                    $log::info("Version adjustment:: setting Aggs key '_key' in place of '_term' [v" . $this->query->get('elastic_version') .']', get_class());
+                    $this->log::info("Version adjustment:: setting Aggs key '_key' in place of '_term' [v" . $this->query->get('elastic_version') .']', get_class());
                     $query['body']['aggs'] = Arr::replaceKeys('_term', '_key', $query['body']['aggs']);
 
                     $query['body']['aggs'] = Arr::replaceKeys('interval', 'calendar_interval', $query['body']['aggs']);
@@ -216,7 +213,7 @@
             }else{
 
                 if(isset($query['body']['aggs'])){
-                    $log::info("Version adjustment:: setting Aggs key '_term' in place of '_key' [v" . $this->query->get('elastic_version') .']', get_class());
+                    $this->log::info("Version adjustment:: setting Aggs key '_term' in place of '_key' [v" . $this->query->get('elastic_version') .']', get_class());
                     $query['body']['aggs'] = Arr::replaceKeys('_key', '_term', $query['body']['aggs']);
 
                     $query['body']['aggs'] = Arr::replaceKeys('calendar_interval', 'interval', $query['body']['aggs']);
@@ -227,18 +224,18 @@
 
             // type & track_total_hits & skip_duplicates
             if (intval($this->query->get('elastic_version')) < 7) {
-                //print_r($this->config);die;
-                $log::info("Version adjustment:: setting 'type=doc' [v" . $this->query->get('elastic_version') .']', get_class());
+
+                $this->log::info("Version adjustment:: setting 'type=doc' [v" . $this->query->get('elastic_version') .']', get_class());
                 Arr::set($query, 'type', $this->config->get('dbm.dbm_type'));
 
                 if (Arr::searchKeys($query, 'track_total_hits')) {
-                    $log::info("Version adjustment:: deleting key track_total_hits:: track_total_hits", get_class());
+                    $this->log::info("Version adjustment:: deleting key track_total_hits:: track_total_hits", get_class());
                     Arr::del($query, "body.track_total_hits");
                 }
 
                 if( !empty($query['suggest']) ){
                     if (Arr::searchKeys($query['suggest'], 'skip_duplicates')) {
-                        $log::info("Version adjustment:: deleting key skip_duplicates", get_class());
+                        $this->log::info("Version adjustment:: deleting key skip_duplicates", get_class());
                         Arr::del($query['suggest'], "skip_duplicates");
                     }
                 }
@@ -258,7 +255,7 @@
             //print_r($query_test);//die;
             if(!isset($query_test['body']['query'])){
 
-                $log::error('There\'s no query to run! Check your search syntax.', get_class());
+                $this->log::error('There\'s no query to run! Check your search syntax.', get_class());
                 return;
 
             }
@@ -266,104 +263,80 @@
 
         // DO THE SEARCH
             //$query = Arr::filterBlanks($query);
-            $log::info('Running search query..');
-            $log::time('SEARCH');
+            $this->log::info('Running search query..');
+            $this->log::time('SEARCH');
 
             try {
 
                 $results = $this->client->search($query);
-
+                //print_r($results->asArray());die;
                 //Elastic\Elasticsearch\Exception\ClientResponseException
                 //\Elasticsearch\Common\Exceptions\BadRequest400Exception|\Elasticsearch\Common\Exceptions\Missing404Exception|\Elasticsearch\Common\Exceptions\ServerErrorResponseException
-            } catch ( BadRequest400Exception $e) {
-
-                $m = $e->getMessage();
-
-                $m = '{' . explode('{', $m, 2)[1]; // v8.2 !! Exceptions used to be JSON now they have e.g.404 Not Found: { json }
-
-                $m = json_encode(json_decode($m,true), JSON_PRETTY_PRINT);
-                print_r($m);die;
-                $log::error($m, 'Search Exception: ' . get_class());
-                $this->logQueryDetails($query, 'Search query');
-                return;
-
-            } catch ( Missing404Exception $e){
+            } catch ( \Elastic\Elasticsearch\Exception\ClientResponseException $e) {
 
                 $m = $e->getMessage();
                 $m = '{' . explode('{', $m, 2)[1]; // v8.2 !! Exceptions used to be JSON now they have e.g.404 Not Found: { json }
-                //print_r($m);
+                //print_r($e);
                 $m = json_encode(json_decode($m,true), JSON_PRETTY_PRINT);
-                $log::error($m, 'Search Exception::: ' . get_class());
+                $this->log::error($m, 'Search Exception', get_class());
                 $this->logQueryDetails($query, 'Search query');
-                return;
-
-            } catch ( ServerErrorResponseException $e){
-
-                $m = $e->getMessage();
-                $m = '{' . explode('{', $m, 2)[1]; // v8.2 !! Exceptions used to be JSON now they have e.g.404 Not Found: { json }
-                //print_r($m);
-                $m = json_encode(json_decode($m,true), JSON_PRETTY_PRINT);
-                echo $m;
-                $log::error($m, 'Search Exception:::: ' . get_class());
-                $this->logQueryDetails($query, 'Search query');
-                return;
+                return; // ToDo: return XML Error message
 
             }
 
-            //$docs = Arr::val($results, 'hits.total.value') ?? Arr::val($results, 'hits.total');
             if( isset($results['hits']['total']['value']) ){
                 $docs = $results['hits']['total']['value'];
             }else{
                 $docs = $results['hits']['total'];
             }
 
-            $log::info("..search query completed. Docs found [$docs]");
-            $log::timeEnd('SEARCH');
+            $this->log::info("..search query completed. Docs found [$docs]");
+            $this->log::timeEnd('SEARCH');
             //print_r($results);//die;
 
             $this->logQueryDetails($query, 'Search Query');
 
         // DISPLAY THE RESULTS
-            $log::info("ResultsInfo - start..", get_class());
+            $this->log::info("ResultsInfo - start..", get_class());
 
             $format = $format ?: 'xml';
             $format = strtolower($format);
 
             if( $format == 'raw' ){
 
-                $log::info("ResultsInfo - PHP.", get_class());
+                $this->log::info("ResultsInfo - PHP.", get_class());
                 $x = print_r($results, true);
                 return $x; //$results; // todo - this is for testing only
 
             }elseif ($format == 'xml'){
 
                 $res = new ResultsInfoXML($results, $this->query->getQueryParams());
-                $log::info("ResultsInfo - XML.", get_class());
+                $this->log::info("ResultsInfo - XML.", get_class());
                 return $res->create();
 
             }elseif ( $format == 'json' ){
                 // this tracks Elastic output
                 //$res = json_encode($results, JSON_PRETTY_PRINT);
                 $res = new ResultsInfoJSON($results, $this->query->getQueryParams());
-                $log::info("ResultsInfo - JSON.", get_class());
+                $this->log::info("ResultsInfo - JSON.", get_class());
                 return $res->create();
 
             }elseif ( $format == 'json2' ){
                 // this tracks XML2
                 $res = new ResultsInfoJSON2($results, $this->query->getQueryParams());
-                $log::info("ResultsInfo - JSON2.", get_class());
+                $this->log::info("ResultsInfo - JSON2.", get_class());
                 return $res->create();
 
             }elseif ( $format == 'doc' ){
                 // i.e. a XML dump data file
                 $res = new ResultsInfoDoc($results, $this->query->getQueryParams());
-                $log::info("ResultsInfo - Doc.", get_class());
+                $this->log::info("ResultsInfo - Doc.", get_class());
                 return $res->create();
 
             }elseif ( $format == 'html' ){
                 // i.e. a nightmare
                 $res = new ResultsInfoHTML($results, $this->query->getQueryParams());
-                $log::info("ResultsInfo - HTML.", get_class());
+                $this->log::info("ResultsInfo - HTML.", get_class());
                 return $res->create();
 
             }
@@ -379,37 +352,34 @@
          */
         public function logQueryDetails($query, $msg){
 
-            $log = $this->log;
             if($this->query->get('debug')){
 
-                $log::info("Debug requested: [{$this->query->get('debug')}]");
+                $this->log::info("Debug requested: [{$this->query->get('debug')}]");
                 $debugs = explode(',', $this->query->get('debug'));
                 foreach($debugs as $debug){
 
                     if($debug == 'all' or $debug == 'query'){
-                        $log::debug(json_encode($query, JSON_PRETTY_PRINT), $msg);
+                        $this->log::debug(json_encode($query, JSON_PRETTY_PRINT), $msg);
                         break;
                     }
 
                     if( !empty(Arr::val($query, $debug)) ){
                         $tmp[$debug] = Arr::val($query, $debug);
-                        $log::debug(json_encode($tmp, JSON_PRETTY_PRINT), $msg);
+                        $this->log::debug(json_encode($tmp, JSON_PRETTY_PRINT), $msg);
                         unset($tmp);
                     }
 
                 }
             }
 
+
         }
 
         public function viewLog(){
 
-            $log = $this->log;
-            $log = $log::dump_to_string();
-            //echo "<!-- $log -->";
-            //$log::clearLog();
+            $log = $this->log::dump_to_string();
+            $this->log::clearLog();
             return $log;
 
         }
-
-    }
+}

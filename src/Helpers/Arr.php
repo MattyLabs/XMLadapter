@@ -114,7 +114,7 @@
          * @param  string|int  $key
          * @return bool
          */
-        public static function exists($array, $key)
+        public static function exists($array, $key):bool
         {
             if ($array instanceof ArrayAccess) {
 
@@ -329,7 +329,7 @@
          *
          * @return array
          */
-        public static function array_dot( $array,  $prepend = '')
+        public static function array_dot(iterable $array, string $prepend = ''): array
         {
             $results = [];
 

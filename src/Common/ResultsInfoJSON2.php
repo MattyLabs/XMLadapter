@@ -13,7 +13,7 @@
         /**
          * @var SimpleLogger
          */
-        protected  $log;
+        protected SimpleLogger $log;
 
         public function create(){
 
@@ -52,7 +52,6 @@
             foreach( $this->data['hits']['hits'] as $key=>$record){
 
                 $source = []; $add = [];
-                $log = $this->log;
                 ksort($record['_source']);
                 // field loop
                 foreach($record['_source'] as $k=>$v){
@@ -72,7 +71,7 @@
 
                             if( isset($source[$field_key]['@cdata']) ){
                             // don't add it back - issue a warning
-                                $log::warning("Check your indexing: [$field_key] indexed with CDATA section and DBM config adds back CDATA via default_cdata_output param.", get_class());
+                                $this->log::warning("Check your indexing: [$field_key] indexed with CDATA section and DBM config adds back CDATA via default_cdata_output param.", get_class());
 
                             }else{
 

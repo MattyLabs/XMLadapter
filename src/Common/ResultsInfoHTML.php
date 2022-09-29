@@ -15,12 +15,12 @@
         /**
          * @var Config|false
          */
-        protected $config;
+        protected Config $config;
 
         /**
          * @var SimpleLogger
          */
-        protected $log;
+        protected SimpleLogger $log;
 
 
         public function create($tpl = ""){
@@ -132,7 +132,6 @@
         private function getSource(){
 
             $page = [];
-            $log = $this->log;
             //todo:: see what's mawkes sense to set $basepath to
             if(!empty($_SERVER['HTTP_HOST'])){
                 $basepath = 'https://' . $_SERVER['HTTP_HOST'] . '' . $_SERVER['PHP_SELF'] . '';
@@ -163,7 +162,7 @@
 
                             if( isset($source[$field_key]['@cdata']) ){
                             // don't add it back - issue a warning
-                                $log::warning("Check your indexing: [$field_key] indexed with CDATA section and DBM config adds back CDATA via default_cdata_output param.", get_class());
+                                $this->log::warning("Check your indexing: [$field_key] indexed with CDATA section and DBM config adds back CDATA via default_cdata_output param.", get_class());
 
                             }else{
 

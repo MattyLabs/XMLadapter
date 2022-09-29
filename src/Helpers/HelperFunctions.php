@@ -37,7 +37,7 @@
          * @param int $offset
          * @return mixed
          */
-        public static function displayDate($format = 'Ymd',  $offset = 0, $date = null) {
+        public static function displayDate($format = 'Ymd',  $offset = 0, string $date = null) {
 
             date_default_timezone_set('Europe/London');
             if(!empty($date)){
@@ -281,7 +281,7 @@
          * @param string $base64auth
          * @return string
          */
-        public static function getElasticVersion( $hosts, $key = 'version.number',  $base64auth = ""){
+        public static function getElasticVersion(array $hosts, $key = 'version.number', string $base64auth = ""){
 
             $h = reset($hosts);
             $h = str_replace(['http://','https://',':9200'], '', $h);

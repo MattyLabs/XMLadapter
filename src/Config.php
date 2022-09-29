@@ -1,12 +1,11 @@
 <?php
     namespace MattyLabs\XMLAdapter;
 
-    use HTMLPurifier;
     use MattyLabs\XMLAdapter\Common\BaseConfig;
     use MattyLabs\XMLAdapter\Logger\SimpleLogger;
     use MattyLabs\XMLAdapter\Helpers\Arr;
     use MattyLabs\XMLAdapter\Helpers\HelperFunctions as hf;
-    use HTMLPurifier_Config;
+    use \HTMLPurifier_Config;
 
 
 /**
@@ -25,12 +24,12 @@
         /**
          * @var array
          */
-        protected $config = array();
+        protected array $config = array();
 
         /**
          * @var SimpleLogger
          */
-        protected $log;
+        protected SimpleLogger $log;
 
         /**
          * Loads the config array with site settings
@@ -105,11 +104,11 @@
         public function init($querystring = null, $params = null)
         {
             $this->log =  new Logger\SimpleLogger();
-            $log = $this->log;
-            $log::info("Initialising Config", get_class());
+            $this->log::info("Initialising Config", get_class());
 
         // Load $params
             if($params){
+                $this->log::info("setting params via Config:init()", get_class());
                 self::set('params', $params);
             }
 
@@ -123,7 +122,7 @@
         */
             if($querystring) {
 
-                $log::info("QueryString passed via param", get_class());
+                $this->log::info("QueryString passed via param", get_class());
                 if(strpos($querystring, '?')){
 
                     self::set('url.path', explode('?', $querystring)[0]) ;
@@ -137,7 +136,7 @@
 
             }else {
 
-                $log::info("QueryString got from page", get_class());
+                $this->log::info("QueryString got from page", get_class());
                 self::set('url.path', urldecode($_SERVER['SCRIPT_NAME']));
                 self::set('url.qs', urldecode($_SERVER['QUERY_STRING']));
 
@@ -145,31 +144,31 @@
 
             if( empty(self::get('url.qs')) ){
 
-                $log::error("Querystring is empty. Nothing to do!.", get_class());
+                $this->log::error("Querystring is empty. Nothing to do!.", get_class());
                 $this->throwError();
 
             }else{
 
-                $log::info("loading HTML QueryString >> 'config.url.qs_array'", get_class());
+                $this->log::info("loading HTML QueryString >> 'config.url.qs_array'", get_class());
                 self::set('url.qs_array', array_change_key_case(hf::parseQueryStr(self::get('url.qs'))));
 
             }
 
             // DBM: We need this to find the DB config file
             //print_r($this->config);
-            $dbm = self::get('url.qs_array.dbm') ?: self::get('params.dbm');
+            $dbm = self::get('url.qs_array.dbm') ?: self::get('params.dbm') ?: '';
             $dbm = strtolower($dbm);
             if( empty($dbm) ){
 
-                $log::error("Error. DBM not found.", get_class());
+                $this->log::error("Error. DBM not found.", get_class());
                 $this->throwError();
 
             }else{
 
-                $log::info("DBM::[$dbm]", get_class());
+                $this->log::info("DBM::[$dbm]", get_class());
                 self::set('params.dbm', $dbm);
                 self::set('params.sitename', explode('-', $dbm)[0]);
-                $log::info("Sitename::[" . self::get('params.sitename') . "]", get_class());
+                $this->log::info("Sitename::[" . self::get('params.sitename') . "]", get_class());
 
             }
 
@@ -199,7 +198,7 @@
 
             } else {
 
-                $log::error("Error. Cannot locate script path.", get_class());
+                $this->log::error("Error. Cannot locate script path.", get_class());
                 $this->throwError();
 
             }
@@ -217,7 +216,7 @@
          * @param bool $sort
          * @return array
          */
-        public function getConfigArray($sort = true)
+        public function getConfigArray($sort = true): array
         {
             if($sort){
                 ksort($this->config);
@@ -230,7 +229,7 @@
          *
          * @return string
          */
-        public function getQS()
+        public function getQS(): string
         {
             $qs_arr = Arr::filterBlanks($this->config['url.qs_array']);
             return http_build_query($qs_arr);
@@ -255,14 +254,13 @@
          */
         protected function purifyQueryString($qs_array)
         {
-            $log= $this->log;
-            $log::info('HTMLPurify', get_class());
+            $this->log::info('HTMLPurify', get_class());
             if(class_exists('HTMLPurifier_Config')){
 
-                $log::info('HTMLPurifying:keys', get_class());
+                $this->log::info('HTMLPurifying:keys', get_class());
                 $config = HTMLPurifier_Config::createDefault();
-                $purifier = new HTMLPurifier($config);
-                $log::info("HTMLPurifier:[v.$config->version]", get_class());
+                $purifier = new \HTMLPurifier($config);
+                $this->log::info("HTMLPurifier:[v.$config->version]", get_class());
 
                 // might just cause problems purifying passwords See Site_ini: expects simple array of excluded keys e.g. ['ds', '_password']
                 $restricted_keys = self::get('params.htmlpurifier_exclude_keys') ?: [];
@@ -272,7 +270,7 @@
                 foreach($filtered_keys as $key => $val){
                     if( is_array($val)){
                         // You've got 2 url params with the same name like "ST1=plip&ST1=plop"
-                        $log::error("Please check the urlQueryString params for duplicates.", get_class());
+                        $this->log::error("Please check the urlQueryString params for duplicates.", get_class());
                         $this->throwError();
 
                     }
@@ -281,7 +279,7 @@
                 self::set('url.qs_array', $filtered_keys);
 
             }else{
-                $log::info('HTMLPurify: installed but not configured.', get_class());
+                $this->log::info('HTMLPurify: installed but not configured.', get_class());
             }
         }
 
@@ -292,12 +290,11 @@
          */
         protected function throwError($array = null){
 
-            $log = $this->log;
             if($array){
-                $log::error(json_encode($array, JSON_PRETTY_PRINT), get_class() );
+                $this->log::error(json_encode($array, JSON_PRETTY_PRINT), get_class() );
             }
 
-            echo $log::dump_to_string();
+            echo $this->log::dump_to_string();
 
             exit;
 

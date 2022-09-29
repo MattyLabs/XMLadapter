@@ -12,7 +12,7 @@
         /**
          * @var Config|false
          */
-        protected $config;
+        protected Config $config;
 
         public function create(){
 
