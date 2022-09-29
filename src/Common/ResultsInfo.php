@@ -97,7 +97,7 @@
         /**
          * @return array
          */
-        protected function getPagination()
+        protected function getPagination(): array
         {
             $arr = [];
             if(!empty($_SERVER['HTTP_HOST'])){
@@ -200,7 +200,7 @@
                             if ($key == 'average_rating') {
                                 @$res[$key] .= '<' . $v['key'] . ' data-count="' . $v['doc_count'] . '">' . $v['avg_rating']['value'] . '</' . $v['key'] . '>';
                             } else {
-                                @$res[$key] .= ($v['key_as_string'] ?: $v['key']) . ' [' . $v['doc_count'] . ']' . $separator;
+                                @$res[$key] .= ($v['key_as_string'] ?? $v['key']) . ' [' . $v['doc_count'] . ']' . $separator;
                             }
 
                         }

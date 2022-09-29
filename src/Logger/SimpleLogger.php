@@ -2,6 +2,7 @@
 
     namespace MattyLabs\XMLAdapter\Logger;
 
+    use MattyLabs\XMLAdapter\Common\BaseConfig;
 
 /**
  * Simple logger class.
@@ -149,7 +150,7 @@
      * Returns the start time or false if a time tracker with the same name
      * exists
      */
-    public static function time(  $name ) {
+    public static function time( string $name ) {
 
         if ( ! isset( self::$time_tracking[ $name ] ) ) {
             self::$time_tracking[ $name ] = microtime( true );
@@ -168,7 +169,7 @@
      * Returns the total time elapsed for the given time-tracker, or false if the
      * time tracker is not found.
      */
-    public static function timeEnd(  $name ) {
+    public static function timeEnd( string $name ) {
 
         if ( isset( self::$time_tracking[ $name ] ) ) {
             $start = self::$time_tracking[ $name ];

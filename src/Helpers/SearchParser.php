@@ -11,12 +11,12 @@
         /**
          * @var Config|false
          */
-        protected  $config;
+        protected Config $config;
 
         /**
          * @var SimpleLogger
          */
-        protected  $log;
+        protected SimpleLogger $log;
 
         /** Contains all the search components needed to construct the final query
          *  You can access values using SearchParser->get($key)
@@ -34,14 +34,13 @@
             $this->config = Config::instance();
 
             $this->log = new SimpleLogger();
-            $log = $this->log;
 
             $this->query_params = $qs_array ?: $this->config->get('url.qs_array');
 
-            $log::info('SearchParser initialised..', get_class());
-            //$pr = print_r($this->query_params, true);$log::info("$pr", get_class());
-            //$cg = print_r($this->config, true);$log::info("$cg", get_class());
-            //echo $log::dump_to_string(); die;
+            $this->log::info('SearchParser initialised..', get_class());
+            //$pr = print_r($this->query_params, true);$this->log::info("$pr", get_class());
+            //$cg = print_r($this->config, true);$this->log::info("$cg", get_class());
+            //echo $this->log::dump_to_string(); die;
 
             $this->cleanParams();
             $this->cleanSearchParams();
@@ -55,8 +54,8 @@
             $this->setMinShouldMatch();
             $this->setHosts();
 
-            //$log::info("search_query:[{$this->query_params['search_query']}]", get_class());
-            //$pr = print_r($this->query_params, true);$log::info("$pr", get_class());
+            //$this->log::info("search_query:[{$this->query_params['search_query']}]", get_class());
+            //$pr = print_r($this->query_params, true);$this->log::info("$pr", get_class());
 
         }
 
@@ -93,7 +92,7 @@
          *  also attempts to clean some params - particularly &amp;
          *
          */
-        protected function cleanParams()
+        protected function cleanParams():void
         {
 
             $params = $this->query_params;
@@ -630,8 +629,11 @@
 
                 }
 
+                if(!empty($qsf)){
                 $qsf = str_replace('+', ' ', $qsf);
                 $qsf = str_replace('%20', ' ', $qsf);
+                }
+
 
 
                 //echo "<!-- $qsf -->\r\n";
@@ -700,17 +702,16 @@
             $search_filters = array();
             $sfa = array();
             $tmp = '';
-            $log = $this->log;
 
             if(!empty($this->query_params['sqf']) ) {
 
-                $log::info('Search Filters initialising...', get_class());
+                $this->log::info('Search Filters initialising...', get_class());
                 $sf = trim($this->query_params['sqf'], '[/]');
                 $sf = str_replace('&', '{38}', $sf);	// save any '&' in the query
                 $sf = str_replace('/', '&', $sf);	// maybe we use ~ or ^ or | or `
                 $sf = str_replace(':', '=', $sf);
                 //$sf = str_replace(';', '.', $sf);   // Some old sites used ';' in place of '.' for field.raw etc.
-                $log::info("search filter: [$sf]", get_class());
+                $this->log::info("search filter: [$sf]", get_class());
 
                 $sfa = hf::parseQueryStr($sf); // N.B. parse_str converts '.' into '_' so lets not use it :)
 
@@ -804,14 +805,15 @@
                 $this->query_params['search_filters'] = rtrim($tmp, '[/]');
                 // This is the Elasticsearch ready version of the filters
                 $this->query_params['search_filters_array'] = array_filter($search_filters);
-                $log::info('Search Filters done.', get_class());
+                $this->log::info('Search Filters done.', get_class());
                 return array_filter($search_filters);
 
             }else{
 
-                $log::info('Search Filters: None.', get_class());
+                $this->log::info('Search Filters: None.', get_class());
 
             }
+
 
         }
 
@@ -917,12 +919,11 @@
          */
         protected function setHosts(){
 
-            $log = $this->log;
-            $log::info("setHosts()", get_class());
-            //$ecc = print_r($this->config->get('params.elastic_client_config'), true);  $log::info("gak: [$ecc]", get_class());
+            $this->log::info("setHosts()", get_class());
+            //$ecc = print_r($this->config->get('params.elastic_client_config'), true);  $this->log::info("gak: [$ecc]", get_class());
             // N.B. this is the Server default and can be set initially in php.server.defaults::$params['elastic_client_config']
             if(!empty($this->config->get('params.elastic_client_config')) ){
-                $log::info("Loading Elastic Client Config (php.server.defaults).", get_class());
+                $this->log::info("Loading Elastic Client Config (params.elastic_client_config).", get_class());
                 $client_config = $this->config->get('params.elastic_client_config');
             }else{
                 $client_config = [];
@@ -930,13 +931,13 @@
 
             // always override the server.default hosts with the specific dbm hosts
             if(!empty($this->config->get('dbm.dbm_elastic_hosts'))){
-                $log::info("Setting Elastic hosts from DBM.", get_class());
+                $this->log::info("Setting Elastic hosts from DBM.", get_class());
                 $client_config['hosts'] = $this->config->get('dbm.dbm_elastic_hosts');
             }
 
             // if still empty try the local server
             if(empty($client_config['hosts'])){
-                $log::info("Setting fallback hosts", get_class());
+                $this->log::info("Setting fallback hosts", get_class());
                 $client_config['hosts'] = [
                     '127.0.0.1', // fallback
                     $this->config->get('params.this_server_ip'),    // \Config::setServerIP() [N.B.VPN may make LOCAL_ADDR inaccurate]
@@ -950,11 +951,11 @@
             if( !empty($client_config['hosts']) ){
 
                 $hosts_string = implode('|', $client_config['hosts']);
-                $log::info("Using Elastic hosts: [$hosts_string]", get_class());
+                $this->log::info("Using Elastic hosts: [$hosts_string]", get_class());
 
             } else {
 
-                $log::error("Unable to set Elastic hosts.", get_class());
+                $this->log::error("Unable to set Elastic hosts.", get_class());
 
             }
 
@@ -974,7 +975,7 @@
 
 
         /**
-         * @param $cfg
+         * @param $client_config - adds default port to host entries if not already supplied
          * @return void
          */
         protected function check_hosts_port(&$cfg){
@@ -1097,21 +1098,22 @@
         /**
          * @param int $prefixLength
          * @param int $boost
-         * @return array[]|float[][]
+         * @return array[]|\float[][]
          */
         public function getMust($prefixLength = 2, $boost = 1.0){
 
         // Filter ONLY Search
             if( empty($this->query_params['search_terms']) and empty($this->query_params['k']) and empty($this->query_params['q'])){
+                $this->log::info("skipping MUST query. No search terms", get_class());
                 return [];
             }
 
-            $log = $this->log;
              if( !empty($this->query_params['must']) and ($this->query_params['must'] == 'false' or $this->query_params['must'] == 'off') ){
-                $log::info("MUST query switched off..", get_class());
+                $this->log::info("MUST query switched off..", get_class());
                 return [];
             }
-            $log::info("Processing MUST query..", get_class());
+
+            $this->log::info("Processing MUST query..", get_class());
 
         // What's all the fuzz
             $fuzz =  $this->config->get('dbm.default_fuzziness');
@@ -1141,8 +1143,8 @@
 					}elseif (count($this->query_params['search_array']) > 1 and empty($this->query_params['k'])) {
 
 					// then we have "SF1=keyword&ST1=ref_no&SF2=contributor&ST2=matty" i.e. match_all BUT don't match_all!
-						$log::error("Incorrect use of 'SF1=keyword&ST1=ref_no' This means match_all so you can't then add more search terms!", get_class());
-						echo $log::dump_to_string();
+						$this->log::error("Incorrect use of 'SF1=keyword&ST1=ref_no' This means match_all so you can't then add more search terms!", get_class());
+						echo $this->log::dump_to_string();
 						exit;
 
 					}
@@ -1216,19 +1218,19 @@
          */
         public function getShould()
         {
-            $log = $this->log;
+
             // Filter ONLY Search
             if( empty($this->query_params['search_terms']) and empty($this->query_params['k'])){
-                $log::info("SHOULD query - no terms to process.", get_class());
+                $this->log::info("SHOULD query - no terms to process.", get_class());
                 return [];
             }
 
 			 if( !empty($this->query_params['should']) and ($this->query_params['should'] == 'false' or $this->query_params['should'] == 'off') ){
-                $log::info("SHOULD query switched off..", get_class());
+                $this->log::info("SHOULD query switched off..", get_class());
                 return [];
             }
         
-            $log::info("Processing SHOULD query.", get_class());
+            $this->log::info("Processing SHOULD query.", get_class());
             $should = $this->config->get('dbm.elastic_should');
 
             $flat_should = json_encode($should, JSON_PRETTY_PRINT);
@@ -1261,10 +1263,9 @@
         public function getLike()
         {
 
-            $log = $this->log;
             if( !empty($this->query_params['like']) ){
 
-                $log::info("Like is on.", get_class());
+                $this->log::info("Like is on.", get_class());
                 $like = $this->config->get('dbm.elastic_like');
 
                 $flat_like = json_encode($like, JSON_PRETTY_PRINT);
@@ -1302,7 +1303,6 @@
         public function getAggs(){
 
             $aggs = ''; $aggregations = [];
-            $log = $this->log;
             if( !empty($this->query_params['aggs']) ){
                 $aggs = $this->query_params['aggs'];
             }else{
@@ -1313,7 +1313,7 @@
 
             if(!empty($aggs)){
 
-                $log::info("Aggregations are on: [$aggs]", get_class());
+                $this->log::info("Aggregations are on: [$aggs]", get_class());
                 $aggs = explode(',', $aggs);
                 foreach($aggs as $a){
 
@@ -1372,11 +1372,10 @@
 
             $collapse = [];
             $collapse_field = @$this->query_params['collapse'] ?: $this->config->get('dbm.collapse') ?: '';
-            $log = $this->log;
 
             if( !empty($collapse_field) and empty($this->query_params['nqf']) and $collapse_field != 'off' and $this->checkISBNQuery() == false ){
 
-                $log::info("Collapse is on. Field: [$collapse_field]", get_class());
+                $this->log::info("Collapse is on. Field: [$collapse_field]", get_class());
                 $collapse = [
                     'field' => $collapse_field,
                     'inner_hits' => [
@@ -1403,15 +1402,16 @@
         public function getRescore(){
 
             $rescore = null;
-            $log = $this->log;
+
 			 if( !empty($this->query_params['rescore']) and ($this->query_params['rescore'] == 'false' or $this->query_params['rescore'] == 'off') ){
-                $log::info("RESCORE query switched off..", get_class());
+                $this->log::info("RESCORE query switched off..", get_class());
                 return [];
             }
+
             $collapse_field = @$this->query_params['collapse'] ?: $this->config->get('dbm.collapse') ?: '';
             if($this->config->get('dbm.elastic_rescore_show') and $this->checkISBNQuery() == false and empty($collapse_field) and empty($this->query_params['sort']) ){
 
-                $log::info("Rescore is on.", get_class());
+                $this->log::info("Rescore is on.", get_class());
                 //$rescore = $this->config->get('dbm.elastic_rescore') ?? [];
                 if($this->config->get('dbm.elastic_rescore')){
                     $rescore = $this->config->get('dbm.elastic_rescore') ;
@@ -1447,10 +1447,9 @@
         public function getSort(){
 
             $sort = null;
-            $log = $this->log;
             if( !empty($this->query_params['sort']) ){
 
-                $log::info("Sort is on: [{$this->query_params['sort']}]", get_class());
+                $this->log::info("Sort is on: [{$this->query_params['sort']}]", get_class());
                 $sorts = explode(',', $this->query_params['sort']);
                 foreach($sorts as $s){
 
@@ -1480,10 +1479,9 @@
         public function getDateRangeFilter(){
 
             $range = null;
-            $log = $this->log;
             if(!empty($this->query_params['date_range_from']) ){
 
-                $log::info("Date Range is on: [{$this->query_params['date_range_from']}:{$this->query_params['date_range_to']}]", get_class());
+                $this->log::info("Date Range is on: [{$this->query_params['date_range_from']}:{$this->query_params['date_range_to']}]", get_class());
                 $range = [
                     'range' => [
                         $this->config->get('dbm.short_code_date') => [
@@ -1510,19 +1508,24 @@
         protected function checkSortType($field){
 
             $ret = '';
-            $log = $this->log;
             $sort_map = Arr::search($this->config->get('dbm.elastic_index_config.body.mappings'), $field)['value'];
-            if(is_array(($sort_map) and !empty($sort_map))){
-                if(Arr::val($sort_map, 'type') != 'keyword'){
+
+            if( is_array($sort_map) and !empty($sort_map)){
+
+                $type = Arr::val($sort_map, 'type');
+                if( preg_match('/text/', $type) ){
+                    $this->log::info("Sort Type: [$type] adding .raw" , get_class());
                     $ret = '.raw';
+                }else{
+                    $this->log::info("Sort Type: [$type] leave as is" , get_class());
                 }
+
             }else{
-                // it didn't have to be in the DBM mapping
+                // it didn't have to be in the DBM mapping, try to get it from the field name
                 $ret = (preg_match('/sort_|_exact|_code|_rank/', $field)) ? '' : '.raw';
             }
 
-            $log::info("Checking Sort field: [$field] = [$ret]", get_class());
-
+            $this->log::info("Checking Sort field: [$field] = [$ret]", get_class());
             return $ret;
 
         }
@@ -1538,7 +1541,6 @@
         public function getSuggest(){
 
             $suggest = null;
-            $log = $this->log;
             //$show_suggest = $this->config->get('dbm.elastic_suggestions_show') ?? false;
             if($this->config->get('dbm.elastic_suggestions_show')){
                 $show_suggest = $this->config->get('dbm.elastic_suggestions_show');
@@ -1556,18 +1558,16 @@
 
             if(($show_suggest == true) and empty($this->checkISBNQuery())){
 
-                $log::info("Suggest show [$show_suggest]", get_class());
+                $this->log::info("Suggest show [$show_suggest]", get_class());
                 // $suggest = $this->config->get('dbm.elastic_suggest') ?? null;
-                if( $suggest = $this->config->get('dbm.elastic_suggest') ){
+                if( $this->config->get('dbm.elastic_suggest') ){
                     $suggest = $this->config->get('dbm.elastic_suggest');
                 }else{
                     $suggest = null;
                 }
 
-
                 if($suggest){
-                    Arr::del($suggest, "suggest-name.completion.skip_duplicates");
-                    Arr::del($suggest, "suggest-title.completion.skip_duplicates");
+
                     $flat_suggest = json_encode($suggest, JSON_PRETTY_PRINT);
                     $flat_suggest = str_replace('search_terms', addslashes( $this->query_params['search_terms']), $flat_suggest);
                     $flat_suggest = str_replace('search_query', addslashes( $this->query_params['search_query']), $flat_suggest);
@@ -1599,8 +1599,7 @@
             $highlight = null;
             if($this->config->get('dbm.elastic_highlight_show') and $this->checkISBNQuery() == false){
 
-                $log = $this->log;
-                $log::info("Highlight is on.", get_class());
+                $this->log::info("Highlight is on.", get_class());
                 $highlight = $this->config->get('dbm.elastic_highlight');
 
             }
