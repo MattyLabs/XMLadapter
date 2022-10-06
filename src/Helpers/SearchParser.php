@@ -984,14 +984,20 @@
             $arr = Array();
             foreach($hosts as $host){
 
+                if( preg_match('/http:/', $host) ){
+                    $prot = "http";
+                }else{
+                    $prot = "https";
+                }
+
                 $host = str_replace( ['http:', 'https:', '//'], '', $host);
                 if(strpos($host, ':') === false){
 
-                    $arr[] = "http://$host:9200";
+                    $arr[] = "$prot://$host:9200";
 
                 } else {
 
-                    $arr[] = "http://$host";
+                    $arr[] = "$prot://$host";
 
                 }
 
