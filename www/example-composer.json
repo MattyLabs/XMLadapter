@@ -1,0 +1,14 @@
+  {
+    "repositories": [
+        {
+            "url": "https://github.com/MattyLabs/XMLadapter",
+            "type": "vcs"
+        }
+    ],
+    "require": {
+    
+	 	"mattylabs/xmladapter": "^1.0.0" 	 
+     
+    }
+}
+
