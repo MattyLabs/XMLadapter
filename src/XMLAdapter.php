@@ -259,6 +259,61 @@
                 return;
 
             }
+
+        // NOBOOL parameter: unset selected parts of the query
+            if(!empty($this->config->get('params.nobool'))){
+
+                $nobool = $this->config->get('params.nobool');
+                if( preg_match('/must/', $nobool) ){
+				
+                    $this->log::info("NOBOOL: Setting [must] to null", get_class());
+                    if( isset($query['body']['query']['bool']['must']) ){
+                        unset($query['body']['query']['bool']['must']);
+                    }
+                    
+                }
+
+                if( preg_match('/should/', $nobool) ){
+				
+                    $this->log::info("NOBOOL: Setting [should] to null", get_class());
+                    if( isset($query['body']['query']['bool']['should']) ){
+                        unset($query['body']['query']['bool']['should']);
+                    }
+                    
+                }
+
+                if( preg_match('/filter/', $nobool) ){
+				
+                    $this->log::info("NOBOOL: Setting [filter] to null", get_class());
+                    if( isset($query['body']['query']['bool']['filter']) ){
+                        unset($query['body']['query']['bool']['filter']);
+                    }
+                    
+                }
+                
+               
+                if( preg_match('/rescore/', $nobool) ){
+				
+                    $this->log::info("NOBOOL: Setting [rescore] to null", get_class());
+                    if( isset($query['body']['rescore']) ){
+                        unset($query['body']['rescore']);
+                    }
+                    
+                }
+
+                if( preg_match('/suggest/', $nobool) ){
+				
+                    $this->log::info("NOBOOL: Setting [rescore] to null", get_class());
+                    if( isset($query['body']['suggest']) ){
+                        unset($query['body']['suggest']);
+                    }
+                    
+                }
+
+
+
+            }
+
         //print_r($query);die;
 
         // DO THE SEARCH
