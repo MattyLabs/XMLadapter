@@ -303,7 +303,7 @@
 
                 if( preg_match('/suggest/', $nobool) ){
 				
-                    $this->log::info("NOBOOL: Setting [rescore] to null", get_class());
+                    $this->log::info("NOBOOL: Setting [suggest] to null", get_class());
                     if( isset($query['body']['suggest']) ){
                         unset($query['body']['suggest']);
                     }
