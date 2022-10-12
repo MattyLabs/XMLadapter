@@ -21,12 +21,11 @@
 	
 	$params = [
 		'sitename' => 'juniper',
-		//'script_filename' => 'D:/tbp/www/juniper',
 		'www_root' => 'D:/tbp/www',
         'dtsearch_root' => 'D:/dtsearch',
 		'elastic_client_config' => [
 			'hosts' => [			// Default site-wide hosts - overwritten by DBM config
-				'127.0.0.1:9200',
+				'http://127.0.0.1:9200',
 			],
 			'basicAuthentication' => [ 'mattyp', 'Abc12345' ],	// => [ $params['username'], $params['password'] ],
 		],
@@ -53,7 +52,7 @@
 
     // Test query_string queries
     //$request = "DEBUG=on,query&FMM=true&DBM=mattylabs-main&DS=&SF1=keyword&ST1=pollock&SF2=contributor&ST2=&VIEW=xml&FIELDS=default,distinct,uk_vat_price&PL=&debug=&mf=10000&dtspan=&SORT=sort_date/d,imprint_code&SQF=/1:F/2:UK12,NBD&LIKE=&AGGS=bic_tree&COLLAPSE=work_id&DTSPAN=10:10";
-    $request = "DEBUG=on,query&FIELDS=distinct,ctitle,contributor&PL=2&DBM=juniper-main&SF1=keyword&ST1=matthew&SQF=&DTSPAN=&AGGS=&SUGGEST=on&COLLAPSE=&M=&PL=2";
+    $request = "DEBUG=on,query&FIELDS=distinct,ctitle,contributor&PL=2&DBM=juniper-main&SF1=keyword&ST1=matthew&SQF=&DTSPAN=&AGGS=&SUGGEST=on&COLLAPSE=&M=&PL=2&NOBOOL=should,rescore";
     
 	/*
      * SimpleLogging

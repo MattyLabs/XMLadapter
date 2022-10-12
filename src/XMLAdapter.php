@@ -261,9 +261,9 @@
             }
 
         // NOBOOL parameter: unset selected parts of the query
-            if(!empty($this->config->get('params.nobool'))){
+            if(!empty($this->config->get('url.qs_array.nobool'))){
 
-                $nobool = $this->config->get('params.nobool');
+                $nobool = $this->config->get('url.qs_array.nobool');
                 if( preg_match('/must/', $nobool) ){
 				
                     $this->log::info("NOBOOL: Setting [must] to null", get_class());
