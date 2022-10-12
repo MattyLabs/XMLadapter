@@ -38,11 +38,9 @@
     $tt1 = microtime(true);
 
    
-    // Loads the Elasticsearch PHP Client
+    // Loads the Elasticsearch PHP Client & the Adapter
     require_once("d:/tbp/scripts/vendor/autoload.php");
 	
-	// Load the XMLAdapter
-	require_once("d:/tbp/scripts/vendor/mattylabs/XMLAdapter/vendor/autoload.php");
 	
     $tt2 = microtime(true);
     $autoload_time = "AutoLoad: [" . number_format($tt2 - $tt1, 4) . "] seconds";
@@ -67,7 +65,7 @@
 
 
     $xmla = new XMLAdapter($request, $params);
-    //print_r( $config->getConfigArray() ); //die;
+    //print_r( $xmla  ); //die;
     echo $xmla->search('xml');
 
     /*
