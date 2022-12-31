@@ -256,12 +256,91 @@
         // Check we actually have something to search on!
             $query_test = Arr::filterBlanks($query);
             //print_r($query_test);//die;
-            if(!isset($query_test['body']['query'])){
+            if(empty($query_test['body']['query']) and empty($this->query->get('sug')) ){ 
 
                 $log::error('There\'s no query to run! Check your search syntax.', get_class());
                 return;
 
             }
+
+        // NOBOOL parameter: unset selected parts of the query 
+            if(!empty($this->config->get('url.qs_array.nobool'))){ 
+
+                $nobool = $this->config->get('url.qs_array.nobool'); 
+                if( preg_match('/must/', $nobool) ){ 
+                    
+                    $log::info("NOBOOL: Setting [must] to null", get_class()); 
+                    if( isset($query['body']['query']['bool']['must']) ){ 
+                        unset($query['body']['query']['bool']['must']); 
+                    } 
+                        
+                } 
+
+                if( preg_match('/should/', $nobool) ){ 
+                    
+                    $log::info("NOBOOL: Setting [should] to null", get_class()); 
+                    if( isset($query['body']['query']['bool']['should']) ){ 
+                        unset($query['body']['query']['bool']['should']); 
+                    } 
+                        
+                } 
+
+                if( preg_match('/filter/', $nobool) ){ 
+                    
+                    $log::info("NOBOOL: Setting [filter] to null", get_class()); 
+                    if( isset($query['body']['query']['bool']['filter']) ){ 
+                        unset($query['body']['query']['bool']['filter']); 
+                    } 
+                        
+                } 
+                    
+                if( preg_match('/highlight/', $nobool) ){ 
+                    
+                    $log::info("NOBOOL: Setting [highlight] to null", get_class()); 
+                    if( isset($query['body']['highlight']) ){ 
+                        unset($query['body']['highlight']); 
+                    } 
+                        
+                } 
+
+                if( preg_match('/aggs/', $nobool) ){ 
+                    
+                    $log::info("NOBOOL: Setting [aggs] to null", get_class()); 
+                    if( isset($query['body']['aggs']) ){ 
+                        unset($query['body']['aggs']); 
+                    } 
+                        
+                } 
+                
+                if( preg_match('/rescore/', $nobool) ){ 
+                    
+                    $log::info("NOBOOL: Setting [rescore] to null", get_class()); 
+                    if( isset($query['body']['rescore']) ){ 
+                        unset($query['body']['rescore']); 
+                    } 
+                        
+                } 
+
+                if( preg_match('/suggest/', $nobool) ){ 
+                    
+                    $log::info("NOBOOL: Setting [suggest] to null", get_class()); 
+                    if( isset($query['body']['suggest']) ){ 
+                        unset($query['body']['suggest']); 
+                    } 
+                        
+                } 
+
+                if( preg_match('/query/', $nobool) ){ 
+                    
+                    $log::info("NOBOOL: Setting [query] to null", get_class()); 
+                    if( isset($query['body']['query']) ){ 
+                        unset($query['body']['query']); 
+                    } 
+                        
+                } 
+
+
+            } 
         //print_r($query);die;
 
         // DO THE SEARCH

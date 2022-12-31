@@ -630,8 +630,10 @@
 
                 }
 
-                $qsf = str_replace('+', ' ', $qsf);
-                $qsf = str_replace('%20', ' ', $qsf);
+                if(!empty($qsf)){ 
+                    $qsf = str_replace('+', ' ', $qsf); 
+                    $qsf = str_replace('%20', ' ', $qsf); 
+                } 
 
 
                 //echo "<!-- $qsf -->\r\n";
@@ -922,7 +924,7 @@
             //$ecc = print_r($this->config->get('params.elastic_client_config'), true);  $log::info("gak: [$ecc]", get_class());
             // N.B. this is the Server default and can be set initially in php.server.defaults::$params['elastic_client_config']
             if(!empty($this->config->get('params.elastic_client_config')) ){
-                $log::info("Loading Elastic Client Config (php.server.defaults).", get_class());
+                $log::info("Loading Elastic Client Config (params.elastic_client_config).", get_class());
                 $client_config = $this->config->get('params.elastic_client_config');
             }else{
                 $client_config = [];
@@ -974,7 +976,7 @@
 
 
         /**
-         * @param $cfg
+         * @param $client_config - adds default port to host entries if not already supplied 
          * @return void
          */
         protected function check_hosts_port(&$cfg){
@@ -983,14 +985,20 @@
             $arr = Array();
             foreach($hosts as $host){
 
+            // So will default to http:// [N.B. v2.0.0.0 defaults to https://]
+                if( preg_match('/https:/', $host) ){ 
+                    $prot = "https"; 
+                }else{ 
+                    $prot = "http"; 
+                } 
                 $host = str_replace( ['http:', 'https:', '//'], '', $host);
                 if(strpos($host, ':') === false){
 
-                    $arr[] = "http://$host:9200";
+                    $arr[] = "$prot://$host:9200"; 
 
                 } else {
 
-                    $arr[] = "http://$host";
+                    $arr[] = "$prot://$host"; 
 
                 }
 
@@ -1102,15 +1110,18 @@
         public function getMust($prefixLength = 2, $boost = 1.0){
 
         // Filter ONLY Search
+            $log = $this->log;
+
             if( empty($this->query_params['search_terms']) and empty($this->query_params['k']) and empty($this->query_params['q'])){
+                $log::info("skipping MUST query. No search terms", get_class()); 
                 return [];
             }
-
-            $log = $this->log;
-             if( !empty($this->query_params['must']) and ($this->query_params['must'] == 'false' or $this->query_params['must'] == 'off') ){
+            
+            if( !empty($this->query_params['must']) and ($this->query_params['must'] == 'false' or $this->query_params['must'] == 'off') ){
                 $log::info("MUST query switched off..", get_class());
                 return [];
             }
+
             $log::info("Processing MUST query..", get_class());
 
         // What's all the fuzz
@@ -1513,11 +1524,17 @@
             $log = $this->log;
             $sort_map = Arr::search($this->config->get('dbm.elastic_index_config.body.mappings'), $field)['value'];
             if(is_array(($sort_map) and !empty($sort_map))){
-                if(Arr::val($sort_map, 'type') != 'keyword'){
-                    $ret = '.raw';
-                }
+
+                $type = Arr::val($sort_map, 'type'); 
+                if( preg_match('/text/', $type) ){ 
+                    $log::info("Sort Type: [$type] adding .raw", get_class());
+                    $ret = '.raw'; 
+                }else{ 
+                    $log::info("Sort Type: [$type] leave as is", get_class());
+                } 
+
             }else{
-                // it didn't have to be in the DBM mapping
+                // it didn't have to be in the DBM mapping, try to get it from the field name 
                 $ret = (preg_match('/sort_|_exact|_code|_rank/', $field)) ? '' : '.raw';
             }
 
@@ -1533,44 +1550,52 @@
          *  - the Suggestion block is configured in the DBM
          *  - N.B. You will need to ensure you index suggestion fields with type = 'completion'
          *  - See the elkastic-indexer for example as to how to index
-         *  - Can also switch on/off via URL param &SUGGEST=[on|off]
-         */
+         *  - If DBM 'elastic_suggestions_show' = true then set suggestions from the search, use search_terms 
+         *  - If &SUG=xyz - then set suggestions=xyz - this should override search 
+         */ 
         public function getSuggest(){
 
-            $suggest = null;
             $log = $this->log;
+            $suggest = null;
+            $search_terms = $this->query_params['search_terms']; 
+            $search_query = $this->query_params['search_query']; 
+           
             //$show_suggest = $this->config->get('dbm.elastic_suggestions_show') ?? false;
             if($this->config->get('dbm.elastic_suggestions_show')){
-                $show_suggest = $this->config->get('dbm.elastic_suggestions_show');
+
+                $show_suggest = (bool)$this->config->get('dbm.elastic_suggestions_show'); 
+                $log::info("Suggest show (DBM) [$search_terms]", get_class()); 
+
             }else{
+
                 $show_suggest = false;
+
             }
 
-            if(isset($this->query_params['suggest'])){
-                if(preg_match("/on|true|y/i", $this->query_params['suggest'])) {
-                    $show_suggest = true;
-                }else{
-                    $show_suggest = false;
-                }
-            }
+            if( isset($this->query_params['sug']) and !empty($this->query_params['sug']) ){ 
+                
+                $show_suggest = true; 
+                $search_terms = $this->query_params['sug']; 
+                $this->config->set('url.qs_array.nobool', 'query,highlight,aggs'); 
+                $log::info("Suggest show (SUG) [$search_terms]", get_class()); 
+ 
+            } 
 
-            if(($show_suggest == true) and empty($this->checkISBNQuery())){
+            if(($show_suggest === true) and empty($this->checkISBNQuery())){
 
-                $log::info("Suggest show [$show_suggest]", get_class());
-                // $suggest = $this->config->get('dbm.elastic_suggest') ?? null;
-                if( $suggest = $this->config->get('dbm.elastic_suggest') ){
-                    $suggest = $this->config->get('dbm.elastic_suggest');
-                }else{
-                    $suggest = null;
-                }
+                if( $this->config->get('dbm.elastic_suggest') ){ 
+                    $suggest = $this->config->get('dbm.elastic_suggest'); 
+                }else{ 
+                    $suggest = null; 
+                } 
 
 
                 if($suggest){
                     Arr::del($suggest, "suggest-name.completion.skip_duplicates");
                     Arr::del($suggest, "suggest-title.completion.skip_duplicates");
                     $flat_suggest = json_encode($suggest, JSON_PRETTY_PRINT);
-                    $flat_suggest = str_replace('search_terms', addslashes( $this->query_params['search_terms']), $flat_suggest);
-                    $flat_suggest = str_replace('search_query', addslashes( $this->query_params['search_query']), $flat_suggest);
+                    $flat_suggest = str_replace('search_terms', addslashes( $search_terms ), $flat_suggest); 
+                    $flat_suggest = str_replace('search_query', addslashes( $search_query ), $flat_suggest); 
 
                     preg_match_all('/yyyymmdd\[(.*)?\]/',$flat_suggest, $matches);
                     foreach($matches[0] as $key=>$val){

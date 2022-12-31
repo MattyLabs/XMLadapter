@@ -157,7 +157,7 @@
 
             // DBM: We need this to find the DB config file
             //print_r($this->config);
-            $dbm = self::get('url.qs_array.dbm') ?: self::get('params.dbm');
+            $dbm = self::get('url.qs_array.dbm') ?: self::get('params.dbm') ?: '';
             $dbm = strtolower($dbm);
             if( empty($dbm) ){
 
