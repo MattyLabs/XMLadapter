@@ -1541,30 +1541,39 @@
          *  getSuggest()
          *  - the Suggestion block is configured in the DBM
          *  - N.B. You will need to ensure you index suggestion fields with type = 'completion'
-         *  - See the elkastic-indexer for example as to how to index
-         *  - Can also switch on/off via URL param &SUGGEST=[on|off]
+         *  - See the elastic-indexer for example as to how to index
+         *  - If DBM 'elastic_suggestions_show' = true then set suggestions from the search, use search_terms
+         *  - If &SUG=xyz - then set suggestions=xyz - this should override search
          */
         public function getSuggest(){
 
             $suggest = null;
+            $search_terms = $this->query_params['search_terms'];
+            $search_query = $this->query_params['search_query'];
+
             //$show_suggest = $this->config->get('dbm.elastic_suggestions_show') ?? false;
             if($this->config->get('dbm.elastic_suggestions_show')){
-                $show_suggest = $this->config->get('dbm.elastic_suggestions_show');
+               
+                $show_suggest = (bool)$this->config->get('dbm.elastic_suggestions_show');
+                $this->log::info("Suggest show (DBM) [$search_terms]", get_class());
+               
             }else{
+
                 $show_suggest = false;
+
             }
 
-            if(isset($this->query_params['suggest'])){
-                if(preg_match("/on|true|y/i", $this->query_params['suggest'])) {
-                    $show_suggest = true;
-                }else{
-                    $show_suggest = false;
-                }
+            if( isset($this->query_params['sug']) and !empty($this->query_params['sug']) ){
+               
+                $show_suggest = true;
+                $search_terms = $this->query_params['sug'];
+                $this->config->set('url.qs_array.nobool', 'query,highlight,aggs');
+                $this->log::info("Suggest show (SUG) [$search_terms]", get_class());
+
             }
 
-            if(($show_suggest == true) and empty($this->checkISBNQuery())){
+            if(($show_suggest === true) and empty($this->checkISBNQuery())){
 
-                $this->log::info("Suggest show [$show_suggest]", get_class());
                 // $suggest = $this->config->get('dbm.elastic_suggest') ?? null;
                 if( $this->config->get('dbm.elastic_suggest') ){
                     $suggest = $this->config->get('dbm.elastic_suggest');
@@ -1575,8 +1584,8 @@
                 if($suggest){
 
                     $flat_suggest = json_encode($suggest, JSON_PRETTY_PRINT);
-                    $flat_suggest = str_replace('search_terms', addslashes( $this->query_params['search_terms']), $flat_suggest);
-                    $flat_suggest = str_replace('search_query', addslashes( $this->query_params['search_query']), $flat_suggest);
+                    $flat_suggest = str_replace('search_terms', addslashes( $search_terms ), $flat_suggest);
+                    $flat_suggest = str_replace('search_query', addslashes( $search_query ), $flat_suggest);
 
                     preg_match_all('/yyyymmdd\[(.*)?\]/',$flat_suggest, $matches);
                     foreach($matches[0] as $key=>$val){

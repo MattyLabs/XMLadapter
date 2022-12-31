@@ -222,7 +222,7 @@
 
             }
 
-            // type & track_total_hits & skip_duplicates
+        // type & track_total_hits & skip_duplicates
             if (intval($this->query->get('elastic_version')) < 7) {
 
                 $this->log::info("Version adjustment:: setting 'type=doc' [v" . $this->query->get('elastic_version') .']', get_class());
@@ -243,7 +243,7 @@
 
             }
 
-            // LIKE Search: completely replaces the 'body.query'
+        // LIKE Search: completely replaces the 'body.query'
             if (!empty($this->query->get('like'))) {
 
                 Arr::set($query, 'body.query', $this->query->getLike());
@@ -253,7 +253,7 @@
         // Check we actually have something to search on!
             $query_test = Arr::filterBlanks($query);
             //print_r($query_test);//die;
-            if(!isset($query_test['body']['query'])){
+            if(empty($query_test['body']['query']) and empty($this->query->get('sug')) ){
 
                 $this->log::error('There\'s no query to run! Check your search syntax.', get_class());
                 return;
@@ -291,6 +291,23 @@
                     
                 }
                 
+                if( preg_match('/highlight/', $nobool) ){
+				
+                    $this->log::info("NOBOOL: Setting [highlight] to null", get_class());
+                    if( isset($query['body']['highlight']) ){
+                        unset($query['body']['highlight']);
+                    }
+                    
+                }
+
+                if( preg_match('/aggs/', $nobool) ){
+				
+                    $this->log::info("NOBOOL: Setting [aggs] to null", get_class());
+                    if( isset($query['body']['aggs']) ){
+                        unset($query['body']['aggs']);
+                    }
+                    
+                }
                
                 if( preg_match('/rescore/', $nobool) ){
 				
@@ -310,6 +327,14 @@
                     
                 }
 
+                if( preg_match('/query/', $nobool) ){
+				
+                    $this->log::info("NOBOOL: Setting [query] to null", get_class());
+                    if( isset($query['body']['query']) ){
+                        unset($query['body']['query']);
+                    }
+                    
+                }
 
 
             }
