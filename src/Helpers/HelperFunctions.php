@@ -250,7 +250,7 @@
                 ];
 
                 $context = stream_context_create($opts);
-                $response = file_get_contents($rurl, false, $context);
+                $response = @file_get_contents($rurl, false, $context);
 
                 if( $options['clean_xml'] ) {
 
