@@ -189,6 +189,8 @@
 
             ];
 
+            //print_r($query);die;
+
         // We need to cautious about deleting blanks e.g. don't remove 'query' from should clause just because it is empty
             foreach(['aggs', 'collapse', 'highlight', 'rescore', 'sort', 'suggest'] as $key){
                 if( empty($query['body'][$key])){
