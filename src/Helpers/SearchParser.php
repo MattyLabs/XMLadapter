@@ -923,28 +923,37 @@
             //$ecc = print_r($this->config->get('params.elastic_client_config'), true);  $this->log::info("gak: [$ecc]", get_class());
             // N.B. this is the Server default and can be set initially in php.server.defaults::$params['elastic_client_config']
             if(!empty($this->config->get('params.elastic_client_config')) ){
-                $this->log::info("Loading Elastic Client Config (params.elastic_client_config).", get_class());
+                $this->log::info("..loading elastic_client_config (from php.server.defaults).", get_class());
                 $client_config = $this->config->get('params.elastic_client_config');
             }else{
                 $client_config = [];
             }
-
+           
             // always override the server.default hosts with the specific dbm hosts
             if(!empty($this->config->get('dbm.dbm_elastic_hosts'))){
-                $this->log::info("Setting Elastic hosts from DBM.", get_class());
+                
+                $string = implode('|', $this->config->get('dbm.dbm_elastic_hosts'));
+                $this->log::info("..setting dbm_elastic_hosts (from DBM) [$string]", get_class());
                 $client_config['hosts'] = $this->config->get('dbm.dbm_elastic_hosts');
             }
-
+           
             // if still empty try the local server
             if(empty($client_config['hosts'])){
-                $this->log::info("Setting fallback hosts", get_class());
+
                 $client_config['hosts'] = [
                     '127.0.0.1', // fallback
                     $this->config->get('params.this_server_ip'),    // \Config::setServerIP() [N.B.VPN may make LOCAL_ADDR inaccurate]
-
                 ];
+                $string = implode('|', $client_config['hosts']);
+                $this->log::info("..setting fallback hosts [$string]", get_class());
+                
             }
 
+            // Sniff for available nodes before doing the search. Default is true
+            if($this->config->get('dbm.dbm_sniff_hosts') !== false){
+                $this->check_hosts_avail($client_config); 
+            }
+            
             // Elastic v8.2.2 seems to require the port whereas previous versions did not!
             $this->check_hosts_port($client_config);
 
@@ -952,6 +961,8 @@
 
                 $hosts_string = implode('|', $client_config['hosts']);
                 $this->log::info("Using Elastic hosts: [$hosts_string]", get_class());
+                //print_r($client_config);
+                //print_r($this->config->get('dbm'));
 
             } else {
 
@@ -973,6 +984,42 @@
 
         }
 
+        /**
+         * @param $hosts - checks cluster for available hosts and removes any that are 'down'
+         * @return void
+         */
+        protected function check_hosts_avail(&$cfg)
+        {
+            
+            $hosts = $cfg['hosts'];
+
+            foreach($hosts as $h){
+            
+                $arr = parse_url($h);
+                $prot = @$arr['scheme'] ?: @$this->config->get('dbm.dbm_default_protocol') ?: "http";
+                $host = @$arr['host'] ?: @$arr['path'] ?: '';
+                $port = @$arr['port'] ?: 9200;
+                
+                $rurl = "$prot://$host:$port/_nodes/_all/http";	
+                $options['timeout'] = 1;
+                $this->log::info("..sniffing host availability: [$rurl]", get_class());
+                $json = hf::getRest($rurl, $options);	
+                
+                if(!empty($json)){
+                    
+                    $data = json_decode($json, true);
+                    $cfg['hosts'] = array_values(Arr::searchKeys($data, 'host'));
+                    $string = implode('|', $cfg['hosts']);
+                    $this->log::info("Available hosts found: [$string]", get_class());
+                    return;
+            
+                }
+                
+            }
+
+            $this->log::error("No available hosts found!", get_class());
+            
+        }
 
         /**
          * @param $client_config - adds default port to host entries if not already supplied
@@ -981,29 +1028,27 @@
         protected function check_hosts_port(&$cfg){
 
             $hosts = $cfg['hosts'];
-            $arr = Array();
-            foreach($hosts as $host){
+            $avail = array();
 
-                if( preg_match('/http:/', $host) ){
-                    $prot = "http";
+            foreach($hosts as $h){
+
+                $arr = parse_url($h);
+                // Send in the protocol - set it in the DBM - last resort http (most of our servers)
+                $prot = @$arr['scheme'] ?: @$this->config->get('dbm.dbm_default_protocol') ?: "http"; // i.e. specify or it will default to this
+               
+                $this->config->set('dbm.dbm_default_protocol', $prot);  // ideally save what was sent in via DBM
+                $host = @$arr['host'] ?: @$arr['path'] ?: '';
+                $port = @$arr['port'] ?: 9200;
+                if(empty($host)){
+                    $this->log::error("Unable to parse host string: [$h]", get_class());
                 }else{
-                    $prot = "https";
+                     $avail[] = "$prot://$host:$port";
                 }
-
-                $host = str_replace( ['http:', 'https:', '//'], '', $host);
-                if(strpos($host, ':') === false){
-
-                    $arr[] = "$prot://$host:9200";
-
-                } else {
-
-                    $arr[] = "$prot://$host";
-
-                }
+               
 
             }
 
-            $cfg['hosts'] = $arr;
+            $cfg['hosts'] = $avail;
 
         }
         /**
@@ -1238,10 +1283,11 @@
         
             $this->log::info("Processing SHOULD query.", get_class());
             $should = $this->config->get('dbm.elastic_should');
-
+           
             $flat_should = json_encode($should, JSON_PRETTY_PRINT);
             $flat_should = str_replace('search_terms', addslashes( $this->query_params['search_terms']), $flat_should);
             $flat_should = str_replace('search_query', addslashes( $this->query_params['search_query']), $flat_should);
+            $flat_should = str_replace("\\'", "'", $flat_should);   // single quotes inside JSON sting don't need to be escaped!
 
             preg_match_all('/yyyymmdd\[(.*)?\]/',$flat_should, $matches);
             foreach($matches[0] as $key=>$val){
@@ -1252,7 +1298,7 @@
             }
 
             $should = json_decode($flat_should, true);
-
+  
             return $should;
 
         }
