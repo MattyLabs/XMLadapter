@@ -412,13 +412,8 @@
                     $val = str_replace(">", '&gt;', $val);
                     $val = str_replace("<=", '&lte;', $val);
                     $val = str_replace(">=", '&gte;', $val);
-<<<<<<< HEAD
-					$val = str_replace("{63}", '?', $val);
-                    $val = str_replace("{38}", '&', $val);
-=======
-		    $val = str_replace("{63}", '?', $val);
+ 		    $val = str_replace("{63}", '?', $val);
 		    $val = str_replace("{38}", '&', $val);
->>>>>>> main
 
                     if(substr_count($val, '"') % 2 != 0){
                         // if there are an odd number of quotes now, get rid of them all!
