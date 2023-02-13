@@ -220,89 +220,66 @@
          */
         public static function getRest($rurl, array $options = Null){
 
-                // Defaults
-                $options['method'] 			= @$options['method'] ?: 'GET';
-                $options['header'] 			= @$options['header'] ?: 'Content-Type: text/html; charset=UTF-8';
-                $options['timeout'] 		= @$options['timeout'] ?: 1;
-                $options['ignore_errors'] 	= @$options['ignore_errors'] ?: true;
-                $options['postdata'] 		= @$options['postdata'] ?: '';
-                $options['clean_url'] 		= @$options['clean_url'] ?: false;
-                $options['clean_xml'] 		= @$options['clean_xml'] ?: false;
-
-                if( @$options['clean_rurl'] ){
-                    /* N.B. fopen cannot handle spaces or certain other characters in a url - they just fuck it up	*/
-                    $rurl = str_replace('&amp;', '&', $rurl);
-                    $rurl = str_replace("+", "%20", $rurl);
-                    $rurl = str_replace(" ", "%20", $rurl);
-                    //$rurl = str_replace("-", "%2D", $rurl);
-                    //$rurl = str_replace(":", "%3A", $rurl);  //N.B. this seems to break ehTracker / Ajax requests
-
-                }
-
-                $opts = [
-                    'http' => [
-                        'method'		=>	$options['method'],
-                        'header'   	 	=> 	$options['header'],
-                        'timeout'		=> 	$options['timeout'],
-                        'ignore_errors'	=> 	$options['ignore_errors'],
-                        'content'		=>	@$options['postdata'],
-                    ]
+            if( !empty($options['header']) ){
+				
+                $header = $options['header'];
+                
+            }else{
+            
+                $header = [
+                    //"Authorization: Basic {$options['auth']}",
+                    "Content-Type: application/json",
+                    "Connection: Close"
                 ];
-
-                $context = stream_context_create($opts);
-                $response = @file_get_contents($rurl, false, $context);
-
-                if( $options['clean_xml'] ) {
-
-                    // This SHOULD convert XMLHTTP Dom crap back into real chars [e.g. -> Gonz?lez Morales]
-                    $response = mb_convert_encoding($response, 'UTF-8', 'AUTO');
-                    // Most Browsers re-interpret lots of spaces together as space&nbsp;&nbsp; - which is different!
-                    // the offending space characters in your source code are not SPACE (U+0020), but are actually NO-BREAK SPACE (U+00A0). Visually, they appear identical, but if you view your source code in a hex editor (which shows you the individual bytes in the file), you'll see a different encoding for these characters.
-                    $strNoBreakSpace = mb_convert_encoding('&#x00A0;', 'UTF-8', 'HTML-ENTITIES');
-                    $strNormalSpace  = mb_convert_encoding('&#x0020;', 'UTF-8', 'HTML-ENTITIES');
-                    $response = str_replace( $strNoBreakSpace, $strNormalSpace, $response );
-                    // This converts XMLHTTP Dom crap straight into numerical char entities [e.g. Gonz&#225;lez Morales]
-                    // Note: (0x80, 0xffff, ..) is the equivalent of (128, 65535, ,,) i.e start at charCode > 127..apparently :)
-                    $convmap = array(0x80, 0xff, 0, 0xff);
-                    $response = mb_encode_numericentity($response, $convmap, 'UTF-8');
-
-                }
-
-                return $response;
-
-        }
-
-        /**
-         * If you are accessing Elasticsearch in the cloud you will need to supply your username:password as a Base64 encoded string
-         *  N.B. Quicker to get the version from the client than via REST call to host
-         *
-         * @param array $hosts
-         * @param string $key
-         * @param string $base64auth
-         * @return string
-         */
-        public static function getElasticVersion(array $hosts, $key = 'version.number', string $base64auth = ""){
-
-            $h = reset($hosts);
-            $h = str_replace(['http://','https://',':9200'], '', $h);
-
-            if( !empty($base64auth) ){
-
-               $options = [
-                  'header' => ["Authorization: Basic $base64auth"]
-               ];
-                $v = self::getRest("http://$h:9200", $options);
-                return Arr::val(json_decode($v, true), $key);
-
+                
+            }
+            
+            $curl_options = [
+    
+                CURLOPT_URL	=> $rurl,
+                CURLOPT_HEADER => false,	// 0 removes headers from response leaving just the JSON
+                CURLOPT_HTTPHEADER => $header,
+                CURLOPT_TIMEOUT => @$options['timeout'] ?: 1,
+                CURLOPT_CONNECTTIMEOUT => @$options['connect_timeout'] ?: @$options['timeout'] ?: 1,
+                
+                CURLOPT_RETURNTRANSFER => true, // sets curl_exec() to return request body e.g. as $response
+                CURLOPT_FAILONERROR => true,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_ENCODING => '',	
+                
+                CURLOPT_VERBOSE => true,
+                //CURLOPT_CAINFO => "",
+                CURLOPT_SSL_VERIFYPEER => false,	// 0 for testing :)
+                CURLOPT_SSL_VERIFYHOST => false,
+                //CURLOPT_STDERR => ($f = fopen("d:/temp/curl-client.txt", "a")),
+                
+            ];
+            
+            //print_r($curl_options); die;
+            $curl = curl_init($rurl);
+            curl_setopt_array($curl, ($curl_options));	
+            $response = curl_exec($curl);
+            //print_r("[$response]");
+            if (curl_errno($curl)){
+                
+                //$info = rawurldecode(var_export(curl_getinfo($curl),true));
+                //$response = 'getRest() Error: ' . curl_error($curl) . "$info";
+                //print_r($info . $response); die;
+                $response = '';
+                
             } else {
 
-               return '7.14.99';
+              //$skip = intval(curl_getinfo($curl, CURLINFO_HEADER_SIZE)); 
+              //$responseHeader = substr($response, 0, $skip);
+              //$response = substr($response,$skip);
 
-            }
-
-
+            }  
+            
+            curl_close($curl);
+            return $response;
 
         }
+
 
         /**
          * @param $xml
