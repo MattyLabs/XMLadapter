@@ -925,7 +925,7 @@
             //$ecc = print_r($this->config->get('params.elastic_client_config'), true);  $log::info("gak: [$ecc]", get_class());
             // N.B. this is the Server default and can be set initially in php.server.defaults::$params['elastic_client_config']
             if(!empty($this->config->get('params.elastic_client_config')) ){
-                $this->log::info("..loading elastic_client_config (from php.server.defaults).", get_class());
+                $log::info("..loading elastic_client_config (from php.server.defaults).", get_class());
                 $client_config = $this->config->get('params.elastic_client_config');
             }else{
                 $client_config = [];
@@ -935,7 +935,7 @@
             if(!empty($this->config->get('dbm.dbm_elastic_hosts'))){
                 
                 $string = implode('|', $this->config->get('dbm.dbm_elastic_hosts'));
-                $this->log::info("..setting dbm_elastic_hosts (from DBM) [$string]", get_class());
+                $log::info("..setting dbm_elastic_hosts (from DBM) [$string]", get_class());
                 $client_config['hosts'] = $this->config->get('dbm.dbm_elastic_hosts');
             }
     
@@ -947,7 +947,7 @@
                     $this->config->get('params.this_server_ip'),    // \Config::setServerIP() [N.B.VPN may make LOCAL_ADDR inaccurate]
                 ];
                 $string = implode('|', $client_config['hosts']);
-                $this->log::info("..setting fallback hosts [$string]", get_class());
+                $log::info("..setting fallback hosts [$string]", get_class());
                 
             }
 
@@ -965,7 +965,7 @@
             if( !empty($client_config['hosts']) ){
 
                 $hosts_string = implode('|', $client_config['hosts']);
-                $this->log::info("Using Elastic hosts: [$hosts_string]", get_class());
+                $log::info("Using Elastic hosts: [$hosts_string]", get_class());
                 //print_r($client_config);
                 //print_r($this->config->get('dbm'));
 
@@ -998,10 +998,11 @@
             
             $hosts = $cfg['hosts'];
             $auth = '';
-            $this->log::info("Starting sniffer", get_class());
+            $log = $this->log;
+            $log::info("Starting sniffer", get_class());
             if( !empty($this->config->get('params.elastic_client_config.basicAuthentication')) ){
                 $auth = ( implode(':', $this->config->get('params.elastic_client_config.basicAuthentication')) );
-                //$this->log::info("..using credentials: [$auth]", get_class());
+                //$log::info("..using credentials: [$auth]", get_class());
             }
 
             foreach($hosts as $h){
@@ -1017,7 +1018,7 @@
                     $rurl = "$prot://$host:$port/_nodes/_all/http";	
                 }
                 
-                $this->log::info("..sniffing host availability: [$prot://$host:$port/_nodes/_all/http]", get_class());
+                $log::info("..sniffing host availability: [$prot://$host:$port/_nodes/_all/http]", get_class());
                 $json = hf::getRest($rurl);	
                 
                 if(!empty($json)){
@@ -1025,18 +1026,18 @@
                     $data = json_decode($json, true);
                     $cfg['hosts'] = array_values(Arr::searchKeys($data, 'host'));
                     $string = implode('|', $cfg['hosts']);
-                    $this->log::info("..sniffer found available hosts: [$string]", get_class());
+                    $log::info("..sniffer found available hosts: [$string]", get_class());
                     return;
             
                 } else {
 
-                    $this->log::info("..sniffer could not reach host: [$h]", get_class());
+                    $log::info("..sniffer could not reach host: [$h]", get_class());
 
                 }
                 
             }
 
-            $this->log::error("..sniffer could not find any hosts!", get_class());
+            $log::error("..sniffer could not find any hosts!", get_class());
             
         }
 
@@ -1048,6 +1049,7 @@
 
             $hosts = $cfg['hosts'];
             $avail = array();
+            $log = $this->log;
 
             foreach($hosts as $h){
 
@@ -1059,7 +1061,7 @@
                 $host = @$arr['host'] ?: @$arr['path'] ?: '';
                 $port = @$arr['port'] ?: 9200;
                 if(empty($host)){
-                    $this->log::error("Unable to parse host string: [$h]", get_class());
+                    $log::error("Unable to parse host string: [$h]", get_class());
                 }else{
                      $avail[] = "$prot://$host:$port";
                 }
