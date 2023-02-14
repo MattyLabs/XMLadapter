@@ -954,8 +954,12 @@
             // Clean up hosts from Server Defaults & DBM etc.
             $this->check_hosts_port($client_config);
 
-            // Sniff for available nodes before doing the search. Default: 'dbm_sniff_hosts' = true
-            if($this->config->get('dbm.dbm_sniff_hosts') !== false){
+            // Sniff for available nodes before doing the search. Default: 'dbm_sniff_hosts' = 'on'
+            $sniff = @$this->config->get('params.sniff_hosts') ?: 'on';
+            if(!empty($this->config->get('dbm.dbm_sniff_hosts') )){
+                $sniff = $this->config->get('dbm.dbm_sniff_hosts') ;
+            }
+            if($sniff === 'on'){
                 $this->check_hosts_avail($client_config); 
             }
             
@@ -1008,7 +1012,7 @@
             foreach($hosts as $h){
             
                 $arr = parse_url($h);
-                $prot = @$arr['scheme'] ?: @$this->config->get('dbm.dbm_default_protocol') ?: "http";
+                $prot = @$arr['scheme'] ?: @$this->config->get('params.default_protocol') ?: "http";
                 $host = @$arr['host'] ?: @$arr['path'] ?: '';
                 $port = @$arr['port'] ?: 9200;
                 
@@ -1055,9 +1059,9 @@
 
                 $arr = parse_url($h);
                 // Send in the protocol - set it in the DBM - last resort http (most of our servers)
-                $prot = @$this->config->get('dbm.dbm_default_protocol') ?: @$arr['scheme'] ?: "http"; // i.e. specify or it will default to this
+                $prot = @$arr['scheme'] ?: @$this->config->get('params.default_protocol') ?: "http"; // i.e. specify or it will default to this
                
-                $this->config->set('dbm.dbm_default_protocol', $prot);  // ideally save what was sent in via DBM
+                $this->config->set('params.default_protocol', $prot);  // ideally save what was sent in via DBM
                 $host = @$arr['host'] ?: @$arr['path'] ?: '';
                 $port = @$arr['port'] ?: 9200;
                 if(empty($host)){
