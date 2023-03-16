@@ -247,7 +247,7 @@
                 CURLOPT_FOLLOWLOCATION => true,
                 CURLOPT_ENCODING => '',	
                 
-                CURLOPT_VERBOSE => true,
+                CURLOPT_VERBOSE => false,
                 //CURLOPT_CAINFO => "",
                 CURLOPT_SSL_VERIFYPEER => false,	// 0 for testing :)
                 CURLOPT_SSL_VERIFYHOST => false,

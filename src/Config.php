@@ -104,7 +104,7 @@
         public function init($querystring = null, $params = null)
         {
             $this->log =  new Logger\SimpleLogger();
-            $this->log::info("Initialising Config", get_class());
+            $this->log::info("Initialising Config: [XMLAdapter v2.0.9]", get_class());
 
         // Load $params
             if($params){
