@@ -363,7 +363,7 @@
                 $m = '{' . explode('{', $m, 2)[1]; // v8.2 !! Exceptions used to be JSON now they have e.g.404 Not Found: { json }
 
                 $m = json_encode(json_decode($m,true), JSON_PRETTY_PRINT);
-                print_r($m);die;
+                //print_r($m);die;
                 $log::error($m, 'Search Exception: ' . get_class());
                 $this->logQueryDetails($query, 'Search query');
                 return;

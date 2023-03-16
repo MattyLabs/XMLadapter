@@ -106,10 +106,11 @@
         {
             $this->log =  new Logger\SimpleLogger();
             $log = $this->log;
-            $log::info("Initialising Config", get_class());
+            $log::info("Initialising Config: [XMLAdapter v1.0.9]", get_class());
 
         // Load $params
             if($params){
+                $log::info("setting params via Config:init()", get_class());
                 self::set('params', $params);
             }
 

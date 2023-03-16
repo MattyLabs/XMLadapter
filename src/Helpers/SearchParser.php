@@ -1593,7 +1593,8 @@
             $ret = '';
             $log = $this->log;
             $sort_map = Arr::search($this->config->get('dbm.elastic_index_config.body.mappings'), $field)['value'];
-            if(is_array(($sort_map) and !empty($sort_map))){
+
+            if( is_array($sort_map) and !empty($sort_map)){
 
                 $type = Arr::val($sort_map, 'type'); 
                 if( preg_match('/text/', $type) ){ 
