@@ -11,6 +11,7 @@
     use MattyLabs\XMLAdapter\Helpers\Arr;
 
 	use \Elastic\Elasticsearch\ClientBuilder;
+    use \Elastic\Transport\Exception\NoNodeAvailableException;
 	use \Symfony\Component\HttpClient\Psr18Client;
 
 
@@ -252,6 +253,13 @@
 
             }
 
+        // MOQ: getMyOwnQuery() - completely replaces the 'body.query'
+            if (!empty($this->query->getMyOwnQuery())) {
+
+                Arr::set($query, 'body.query', $this->query->getMyOwnQuery());
+
+            }
+
         // Check we actually have something to search on!
             $query_test = Arr::filterBlanks($query);
             //print_r($query_test);//die;
@@ -364,6 +372,15 @@
                 $this->logQueryDetails($query, 'Search query');
                 return; // ToDo: return XML Error message
 
+            } catch( \Elastic\Transport\Exception\NoNodeAvailableException $e) {
+
+                $m = $e->getMessage();
+                $m = '{' . explode('{', $m, 2)[1]; // v8.2 !! Exceptions used to be JSON now they have e.g.404 Not Found: { json }
+                //print_r($e);
+                $m = json_encode(json_decode($m,true), JSON_PRETTY_PRINT);
+                $this->log::error($m, 'Exception', get_class());
+                $this->logQueryDetails($query, 'Search query: No Nodes Available');
+                return; // ToDo: return XML Error message
             }
 
             if( isset($results['hits']['total']['value']) ){

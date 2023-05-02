@@ -104,7 +104,9 @@
         public function init($querystring = null, $params = null)
         {
             $this->log =  new Logger\SimpleLogger();
-            $this->log::info("Initialising Config: [XMLAdapter v2.0.9]", get_class());
+            /* VERSION: 1.~ for PHP v5.6+. 2.~ for PHP v7+ */
+            /* - 2.0.10: Added &MOQ param (MyOwnQuery()) */
+            $this->log::info("Initialising Config: [XMLAdapter v2.0.10]", get_class());
 
         // Load $params
             if($params){
