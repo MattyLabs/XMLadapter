@@ -255,6 +255,13 @@
 
             }
 
+            // MOQ: getMyOwnQuery() - completely replaces the 'body.query' 
+            if (!empty($this->query->getMyOwnQuery())) { 
+ 
+                Arr::set($query, 'body.query', $this->query->getMyOwnQuery()); 
+
+            } 
+
         // Check we actually have something to search on!
             $query_test = Arr::filterBlanks($query);
             //print_r($query_test);//die;

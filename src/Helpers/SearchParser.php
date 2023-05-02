@@ -1685,7 +1685,59 @@
             return $suggest;
         }
 
-
+         /** 
+         *  getMyOwnQuery() 
+         *  - the MyOwnQuery block is configured in the DBM 'elastic_query' 
+         *  - N.B. You will need to ensure you index 'suggest_terms' field and set 'elastic_suggestions_index' = true 
+         *  - See the elastic-indexer for example as to how to index 'suggest_terms' 
+         *  - Dynamically configured: &MOQ=search_terms - You mat want to set &NOBOOL=rescore 
+         */ 
+        public function getMyOwnQuery(){ 
+ 
+            $moq = null; $show_moq = false; 
+            $search_terms = $this->query_params['search_terms']; 
+            $search_query = $this->query_params['search_query']; 
+ 
+            if( isset($this->query_params['moq']) and !empty($this->query_params['moq']) ){ 
+                
+                $show_moq = true; 
+                $search_terms = $this->query_params['moq']; 
+                
+                $this->log::info("MyOwnQuery overwrites body.query (MOQ) [$search_terms]", get_class()); 
+ 
+            } 
+ 
+            if(($show_moq === true) and empty($this->checkISBNQuery())){ 
+ 
+                if( $this->config->get('dbm.elastic_query') ){ 
+                    $moq = $this->config->get('dbm.elastic_query'); 
+                }else{ 
+                    $moq = null; 
+                } 
+ 
+                if($moq){ 
+ 
+                    $flat_moq = json_encode($moq, JSON_PRETTY_PRINT); 
+                    $flat_moq = str_replace('search_terms', addslashes( $search_terms ), $flat_moq); 
+                    $flat_moq = str_replace('search_query', addslashes( $search_query ), $flat_moq); 
+ 
+                    preg_match_all('/yyyymmdd\[(.*)?\]/',$flat_moq, $matches); 
+                    foreach($matches[0] as $key=>$val){ 
+ 
+                        $d = $matches[1][$key]; 
+                        $dte = hf::displayDate('Ymd', $d); 
+                        $flat_moq = str_replace($val, $dte, $flat_moq); 
+                    } 
+ 
+                    $moq = json_decode($flat_moq, true); 
+ 
+                } 
+ 
+            } 
+ 
+            return $moq; 
+        } 
+ 
         /**
          *  getHighlight()
          *  - the highlight block is configured in the DBM
