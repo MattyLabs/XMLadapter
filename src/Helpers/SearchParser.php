@@ -1694,6 +1694,7 @@
          */ 
         public function getMyOwnQuery(){ 
  
+	    $log = $this->log;
             $moq = null; $show_moq = false; 
             $search_terms = $this->query_params['search_terms']; 
             $search_query = $this->query_params['search_query']; 
@@ -1703,7 +1704,7 @@
                 $show_moq = true; 
                 $search_terms = $this->query_params['moq']; 
                 
-                $this->log::info("MyOwnQuery overwrites body.query (MOQ) [$search_terms]", get_class()); 
+                $log::info("MyOwnQuery overwrites body.query (MOQ) [$search_terms]", get_class()); 
  
             } 
  
