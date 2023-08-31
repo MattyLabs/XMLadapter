@@ -1,5 +1,5 @@
 <?php
-    namespace Mattylabs\XMLAdapter\Helpers;
+    namespace MattyLabs\XMLAdapter\Helpers;
 
     use ArrayAccess;
     use RecursiveArrayIterator;
