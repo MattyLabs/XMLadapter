@@ -1172,11 +1172,9 @@
 
 
         /**
-         * @param int $prefixLength
-         * @param int $boost
-         * @return array[]|float[][]
+         * @return array[]|\float[][]
          */
-        public function getMust($prefixLength = 2, $boost = 1.0){
+        public function getMust(){
 
         // Filter ONLY Search
             $log = $this->log;
@@ -1203,6 +1201,10 @@
                 }
             }
             //echo "[$fuzz]";die;
+
+        // Set default_prefixlength & default_boost in DBM
+            $prefixLength = $this->config->get('dbm.default_prefixlength') ?: 0;
+            $boost = $this->config->get('dbm.default_boost') ?: 1;
 
 
         // "SF1=keyword&ST1=ref_no&SF2=&ST2=" means match all OK!
@@ -1247,6 +1249,11 @@
 
                 ];
 
+            // For phrase searches
+                if($fuzz == 0){
+                    Arr::del($must, 'query_string.fuzziness');
+                }
+
             // Minimum Should Match
                 if( !empty($this->query_params['msm'])){
                     Arr::set($must,'query_string.minimum_should_match', $this->query_params['msm']);
@@ -1281,6 +1288,12 @@
             if( !empty($this->query_params['msm'])){
                 Arr::set($must,'multi_match.minimum_should_match', $this->query_params['msm']);
             }
+
+             // For phrase searches
+             if($fuzz == 0){
+                Arr::del($must, 'multi_match.fuzziness');
+            }
+            
 
             return $must;
 
@@ -1351,6 +1364,7 @@
                 $flat_like = json_encode($like, JSON_PRETTY_PRINT);
                 $flat_like = str_replace('elastic_like_index', $this->config->get('dbm.dbm_index'), $flat_like);
                 $flat_like = str_replace('elastic_like_id', $this->query_params['like'], $flat_like);
+                $flat_like = str_replace('elastic_like_terms', $this->query_params['like'], $flat_like);
 
                 $like = json_decode($flat_like, true);
                 $like = Arr::filterBlanks(($like));
@@ -1503,6 +1517,9 @@
 
                 $flat_rescore = json_encode($rescore, JSON_PRETTY_PRINT);
                 $flat_rescore = str_replace('rescore_window_size',  $this->config->get('dbm.rescore_window_size'), $flat_rescore);
+                $flat_rescore = str_replace('search_terms', addslashes( $this->query_params['search_terms']), $flat_rescore);
+                $flat_rescore = str_replace('search_query', addslashes( $this->query_params['search_query']), $flat_rescore);
+                $flat_rescore = str_replace("\\'", "'", $flat_rescore);   // single quotes inside JSON sting don't need to be escaped!
 
                 preg_match_all('/yyyymmdd\[(.*)?\]/',$flat_rescore, $matches);
                 foreach($matches[0] as $key=>$val){
@@ -1606,7 +1623,7 @@
 
             }else{
                 // it didn't have to be in the DBM mapping, try to get it from the field name 
-                $ret = (preg_match('/sort_|_exact|_code|_rank/', $field)) ? '' : '.raw';
+                $ret = (preg_match('/sort_|_exact|_code|_rank|_count/', $field)) ? '' : '.raw';
             }
 
             $log::info("Checking Sort field: [$field] = [$ret]", get_class());

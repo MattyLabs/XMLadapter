@@ -313,7 +313,7 @@
             while( count($parts) > 1 ){
                 $p = array_shift($parts);
                 if(isset($array[$p]) and is_array($array[$p])){
-                    $array=& $array[$p];
+                    $array = &$array[$p];
                 }
             }
 
