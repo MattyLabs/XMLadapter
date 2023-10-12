@@ -107,8 +107,8 @@
             $this->log =  new Logger\SimpleLogger();
             $log = $this->log;
               /* VERSION: 1.~ for PHP v5.6+. 2.~ for PHP v7+ */ 
-            /* - 2.0.10: Added &MOQ param (MyOwnQuery()) */ 
-            $log::info("Initialising Config: [XMLAdapter v1.0.13]", get_class());
+            /* - 1.0.14: Fix for default_force_quotes */ 
+            $log::info("Initialising Config: [XMLAdapter v1.0.14]", get_class());
 
         // Load $params
             if($params){

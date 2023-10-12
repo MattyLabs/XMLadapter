@@ -566,15 +566,13 @@
                             //$this->config->set('dbm.short_code_date', $val);	// temporarily reassign the short_code_date with the actual field used.
                             $qs .= $op . $val . ':[' . str_replace(':', ' TO ', $params['search_text_'.$count]) . ']';
 
-                        } elseif (!empty($this->config->get('dbm.default_force_quotes')) ) {
-
-                            if (in_array($val, $this->config->get('dbm.default_force_quotes'))) {
-                                // add quotes to increase precision: you will want to set 'default_phrase_slop' = 10 or more
-                                $qs .= $op . '(' . $val . ':("' . $params['search_text_' . $count] . '"))';
-                                // remove double-double quotes if already present :)
-                                $qs = str_replace('""', '"', $qs);
-                                $st[$val] = $params['search_text_' . $count];
-                            }
+                        } elseif (!empty($this->config->get('dbm.default_force_quotes')) and in_array($val, $this->config->get('dbm.default_force_quotes')) ) {
+                            
+							// add quotes to increase precision: you will want to set 'default_phrase_slop' = 10 or more
+							$qs .= $op . '(' . $val . ':("' . $params['search_text_' . $count] . '"))';
+							// remove double-double quotes if already present :)
+							$qs = str_replace('""', '"', $qs);
+							$st[$val] = $params['search_text_' . $count];
 
                         }else {
 
