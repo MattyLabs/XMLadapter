@@ -976,9 +976,12 @@
 
             }
 
-            if( !empty($this->config->get('dbm.dbm_elastic_cloud.elasticCloudId')) ){
+            if( !empty($this->config->get('dbm.dbm_elastic_cloud')) ){
 
+                if( !empty( $this->config->get('dbm.dbm_elastic_cloud.elasticCloudId') )){
                 $client_config['elasticCloudId'] = $this->config->get('dbm.dbm_elastic_cloud.elasticCloudId');
+                }
+               
                 $client_config['basicAuthentication'] = [
                     $this->config->get('dbm.dbm_elastic_cloud.username'),
                     $this->config->get('dbm.dbm_elastic_cloud.password')
