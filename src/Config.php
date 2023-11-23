@@ -107,7 +107,7 @@
             $this->log =  new Logger\SimpleLogger();
             $log = $this->log;
               /* VERSION: 1.~ for PHP v5.6+. 2.~ for PHP v7+ */ 
-            /* - 1.0.15: Fix for default_force_quotes - 2 */ 
+            /* - 1.0.16: Fix for setting dbm_elastic_cloud */ 
             $log::info("Initialising Config: [XMLAdapter v1.0.15]", get_class());
 
         // Load $params
