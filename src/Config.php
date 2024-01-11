@@ -105,8 +105,8 @@
         {
             $this->log =  new Logger\SimpleLogger();
             /* VERSION: 1.~ for PHP v5.6+. 2.~ for PHP v7+ */
-            /* - 2.0.16: Fix for setting dbm_elastic_cloud - 2 */
-            $this->log::info("Initialising Config: [XMLAdapter v2.0.16]", get_class());
+            /* - 2.0.17: Fix setting getSuggestions() source field to 'text' instead of ctitle and adding ability to set shard_preference - 2 */
+            $this->log::info("Initialising Config: [XMLAdapter v2.0.17]", get_class());
 
         // Load $params
             if($params){

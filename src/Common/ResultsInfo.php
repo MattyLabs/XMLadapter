@@ -29,7 +29,7 @@
                     'search_filters'    => $this->getFilters(),
                     'search_query'      => $this->params['search_query'] . " " . $this->getFilters('range'),
                     'suggest_names'     => $this->getSuggestions('suggest-name'),
-                    'suggest_titles'    => $this->getSuggestions('suggest-title', '_source.ctitle'),
+                    'suggest_titles'    => $this->getSuggestions('suggest-title'),
                     'collapse_info'     => $this->getCollapseInfo(),
                     'max_score'         => $this->data['hits']['max_score'],
                     'time_taken'        => $this->data['took']/1000,

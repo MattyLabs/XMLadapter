@@ -235,7 +235,6 @@
 
 
         private function throwError($msg, $error_code){
-//print_r($this->params);//die;
 
             $error_array = [
                 'errordetails' => [
@@ -246,7 +245,7 @@
                     'search_terms'  => $this->params['search_terms'],
                     'search_query'  => $this->params['search_query'],
                     'suggest_names' => $this->getSuggestions('suggest-name'),
-                    'suggest_titles' => $this->getSuggestions('suggest-title', '_source.ctitle'),
+                    'suggest_titles' => $this->getSuggestions('suggest-title'),
                 ]
             ];
 

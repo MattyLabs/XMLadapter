@@ -156,6 +156,7 @@
         // Compile the final query..ToDo Check that this works properly for BDS [see get_xml() and xmla-api.php
             $query = [
                 'index' => $idx,
+                'preference' =>  ($this->config->get('dbm.shard_preference')) ?: '',
                 'body' => [
                     'from' => $this->query->get('from'),
                     'size' => $this->query->get('size'),
