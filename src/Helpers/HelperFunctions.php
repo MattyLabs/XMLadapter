@@ -240,8 +240,8 @@
                 CURLOPT_HEADER => false,	// 0 removes headers from response leaving just the JSON
                 CURLOPT_HTTPHEADER => $header,
                 CURLOPT_TIMEOUT => @$options['timeout'] ?: 1,
-                CURLOPT_CONNECTTIMEOUT => @$options['connect_timeout'] ?: @$options['timeout'] ?: 1,
-                
+                CURLOPT_CONNECTTIMEOUT_MS => @$options['connect_timeout'] ?: @$options['timeout'] ?: 500,
+				CURLOPT_TIMEOUT_MS => @$options['timeout'] ?: 250,
                 CURLOPT_RETURNTRANSFER => true, // sets curl_exec() to return request body e.g. as $response
                 CURLOPT_FAILONERROR => true,
                 CURLOPT_FOLLOWLOCATION => true,

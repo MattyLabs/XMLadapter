@@ -105,8 +105,8 @@
         {
             $this->log =  new Logger\SimpleLogger();
             /* VERSION: 1.~ for PHP v5.6+. 2.~ for PHP v7+ */
-            /* - 2.0.17: Fix setting getSuggestions() source field to 'text' instead of ctitle and adding ability to set shard_preference - 2 */
-            $this->log::info("Initialising Config: [XMLAdapter v2.0.17]", get_class());
+            /* - 2.0.18: Fix for Sniffer: ability to set connect timeout in milliseconds:: check_hosts_avail() and getRest()  */
+            $this->log::info("Initialising Config: [XMLAdapter v2.0.18]", get_class());
 
         // Load $params
             if($params){
@@ -157,7 +157,6 @@
             }
 
             // DBM: We need this to find the DB config file
-            //print_r($this->config);
             $dbm = self::get('url.qs_array.dbm') ?: self::get('params.dbm') ?: '';
             $dbm = strtolower($dbm);
             if( empty($dbm) ){

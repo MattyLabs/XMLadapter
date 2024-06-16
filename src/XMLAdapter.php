@@ -12,6 +12,7 @@
 
 	use \Elastic\Elasticsearch\ClientBuilder;
     use \Elastic\Transport\Exception\NoNodeAvailableException;
+    use \Elastic\Elasticsearch\Exception\ServerResponseException;
 	use \Symfony\Component\HttpClient\Psr18Client;
 
 
@@ -382,6 +383,17 @@
                 $this->log::error($m, 'Exception', get_class());
                 $this->logQueryDetails($query, 'Search query: No Nodes Available');
                 return; // ToDo: return XML Error message
+
+            } catch( \Elastic\Elasticsearch\Exception\ServerResponseException $e) {
+
+                $m = $e->getMessage();
+                $m = '{' . explode('{', $m, 2)[1]; // v8.2 !! Exceptions used to be JSON now they have e.g.404 Not Found: { json }
+                //print_r($e);
+                $m = json_encode(json_decode($m,true), JSON_PRETTY_PRINT);
+                $this->log::error($m, 'Exception', get_class());
+                $this->logQueryDetails($query, 'Search query: Search Error');
+                return; // ToDo: return XML Error message
+                
             }
 
             if( isset($results['hits']['total']['value']) ){
