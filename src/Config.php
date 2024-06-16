@@ -107,8 +107,8 @@
             $this->log =  new Logger\SimpleLogger();
             $log = $this->log;
               /* VERSION: 1.~ for PHP v5.6+. 2.~ for PHP v7+ */ 
-            /* - 1.0.17: Fix getSuggestions(set source field to 'text') */ 
-            $log::info("Initialising Config: [XMLAdapter v1.0.17]", get_class());
+            /* - 1.0.18: Fix for Sniffer: ability to set connect timeout in milliseconds:: check_hosts_avail() and getRest()  */ 
+            $log::info("Initialising Config: [XMLAdapter v1.0.18]", get_class());
 
         // Load $params
             if($params){

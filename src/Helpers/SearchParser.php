@@ -1001,8 +1001,9 @@
         protected function check_hosts_avail(&$cfg)
         {
             
+			$auth = '';
             $hosts = $cfg['hosts'];
-            $auth = '';
+            $avail_hosts = array();
             $log = $this->log;
             $log::info("Starting sniffer", get_class());
             if( !empty($this->config->get('params.elastic_client_config.basicAuthentication')) ){
@@ -1023,13 +1024,24 @@
                     $rurl = "$prot://$host:$port/_nodes/_all/http";	
                 }
                 
-                $log::info("..sniffing host availability: [$prot://$host:$port/_nodes/_all/http]", get_class());
-                $json = hf::getRest($rurl);	
+                $log::info("..sniffing host availability: [$rurl]", get_class());
+                $connect_timeout = @$this->config->get('dbm.dbm_connect_timeout') ?: 250;
+				$timeout = @$this->config->get('dbm.dbm_timeout') ?: 50;
+                $options = [ 'connect_timeout' => $connect_timeout, 'timeout' => $timeout ]; // in milliseconds
+				$json = hf::getRest($rurl, $options);
+                $log::info("..sniffer done. ct[$connect_timeout] t[$timeout]", get_class());
                 
                 if(!empty($json)){
                     
                     $data = json_decode($json, true);
-                    $cfg['hosts'] = array_values(Arr::searchKeys($data, 'host'));
+					$avail_hosts = Arr::searchKeys($data, 'host');
+					foreach($avail_hosts as $idx=>$avail_host){
+					
+						$avail_hosts[$idx] = "$prot://$avail_host:$port";
+						
+					}
+
+                    $cfg['hosts'] = $avail_hosts;
                     $string = implode('|', $cfg['hosts']);
                     $log::info("..sniffer found available hosts: [$string]", get_class());
                     return;
