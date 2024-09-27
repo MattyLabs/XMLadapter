@@ -105,12 +105,12 @@
         {
             $this->log =  new Logger\SimpleLogger();
             /* VERSION: 1.~ for PHP v5.6+. 2.~ for PHP v7+ */
-            /* - 2.0.18: Fix for Sniffer: ability to set connect timeout in milliseconds:: check_hosts_avail() and getRest()  */
-            $this->log::info("Initialising Config: [XMLAdapter v2.0.18]", get_class());
+            /* - 2.1.0: Updated for compatibility with PHP v8.3  */
+            $this->log::info("Initialising Config: [XMLAdapter v2.1.0]", get_class($this));
 
         // Load $params
             if($params){
-                $this->log::info("setting params via Config:init()", get_class());
+                $this->log::info("setting params via Config:init()", get_class($this));
                 self::set('params', $params);
             }
 
@@ -124,7 +124,7 @@
         */
             if($querystring) {
 
-                $this->log::info("QueryString passed via param", get_class());
+                $this->log::info("QueryString passed via param", get_class($this));
                 if(strpos($querystring, '?')){
 
                     self::set('url.path', explode('?', $querystring)[0]) ;
@@ -138,7 +138,7 @@
 
             }else {
 
-                $this->log::info("QueryString got from page", get_class());
+                $this->log::info("QueryString got from page", get_class($this));
                 self::set('url.path', urldecode($_SERVER['SCRIPT_NAME']));
                 self::set('url.qs', urldecode($_SERVER['QUERY_STRING']));
 
@@ -146,12 +146,12 @@
 
             if( empty(self::get('url.qs')) ){
 
-                $this->log::error("Querystring is empty. Nothing to do!.", get_class());
+                $this->log::error("Querystring is empty. Nothing to do!.", get_class($this));
                 $this->throwError();
 
             }else{
 
-                $this->log::info("loading HTML QueryString >> 'config.url.qs_array'", get_class());
+                $this->log::info("loading HTML QueryString >> 'config.url.qs_array'", get_class($this));
                 self::set('url.qs_array', array_change_key_case(hf::parseQueryStr(self::get('url.qs'))));
 
             }
@@ -161,15 +161,15 @@
             $dbm = strtolower($dbm);
             if( empty($dbm) ){
 
-                $this->log::error("Error. DBM not found.", get_class());
+                $this->log::error("Error. DBM not found.", get_class($this));
                 $this->throwError();
 
             }else{
 
-                $this->log::info("DBM::[$dbm]", get_class());
+                $this->log::info("DBM::[$dbm]", get_class($this));
                 self::set('params.dbm', $dbm);
                 self::set('params.sitename', explode('-', $dbm)[0]);
-                $this->log::info("Sitename::[" . self::get('params.sitename') . "]", get_class());
+                $this->log::info("Sitename::[" . self::get('params.sitename') . "]", get_class($this));
 
             }
 
@@ -199,7 +199,7 @@
 
             } else {
 
-                $this->log::error("Error. Cannot locate script path.", get_class());
+                $this->log::error("Error. Cannot locate script path.", get_class($this));
                 $this->throwError();
 
             }
@@ -255,13 +255,13 @@
          */
         protected function purifyQueryString($qs_array)
         {
-            $this->log::info('HTMLPurify', get_class());
+            $this->log::info('HTMLPurify', get_class($this));
             if(class_exists('HTMLPurifier_Config')){
 
-                $this->log::info('HTMLPurifying:keys', get_class());
+                $this->log::info('HTMLPurifying:keys', get_class($this));
                 $config = HTMLPurifier_Config::createDefault();
                 $purifier = new \HTMLPurifier($config);
-                $this->log::info("HTMLPurifier:[v.$config->version]", get_class());
+                $this->log::info("HTMLPurifier:[v.$config->version]", get_class($this));
 
                 // might just cause problems purifying passwords See Site_ini: expects simple array of excluded keys e.g. ['ds', '_password']
                 $restricted_keys = self::get('params.htmlpurifier_exclude_keys') ?: [];
@@ -271,7 +271,7 @@
                 foreach($filtered_keys as $key => $val){
                     if( is_array($val)){
                         // You've got 2 url params with the same name like "ST1=plip&ST1=plop"
-                        $this->log::error("Please check the urlQueryString params for duplicates.", get_class());
+                        $this->log::error("Please check the urlQueryString params for duplicates.", get_class($this));
                         $this->throwError();
 
                     }
@@ -280,7 +280,7 @@
                 self::set('url.qs_array', $filtered_keys);
 
             }else{
-                $this->log::info('HTMLPurify: installed but not configured.', get_class());
+                $this->log::info('HTMLPurify: installed but not configured.', get_class($this));
             }
         }
 
@@ -292,7 +292,7 @@
         protected function throwError($array = null){
 
             if($array){
-                $this->log::error(json_encode($array, JSON_PRETTY_PRINT), get_class() );
+                $this->log::error(json_encode($array, JSON_PRETTY_PRINT), get_class($this) );
             }
 
             echo $this->log::dump_to_string();

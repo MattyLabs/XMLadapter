@@ -56,7 +56,7 @@ class XML2Array
                 throw new Exception('[XML2Array] Error parsing the XML string.'.PHP_EOL.$ex->getMessage());
             }
         } elseif (is_object($input_xml)) {
-            if (get_class($input_xml) != 'DOMDocument') {
+            if (get_class($this)($input_xml) != 'DOMDocument') {
                 throw new Exception('[XML2Array] The input XML object should be of type: DOMDocument.');
             }
             $xml = self::$xml = $input_xml;

@@ -78,22 +78,22 @@
             if (!empty($this->config->get('params.dbm'))) {
 
                 $path = $this->config->get('params.site_root') . "" . $this->config->get('sitename') . "/include/config/{$this->config->get('params.dbm')}-dbm.inc";
-                $this->log::info("Loading DBM >> config.dbm: [$path]", get_class());
+                $this->log::info("Loading DBM >> config.dbm: [$path]", get_class($this));
                 if(file_exists($path)){
 
                     $arr = require($path);
                     $this->config->set('dbm', $arr);
-                    $this->log::info("DBM index: [{$this->config->get('dbm.dbm_index')}]", get_class());
+                    $this->log::info("DBM index: [{$this->config->get('dbm.dbm_index')}]", get_class($this));
 
                 }else{
 
-                    $this->log::error("Failed to load DBM [{$this->config->get('params.dbm')}]. Please check.", get_class());
+                    $this->log::error("Failed to load DBM [{$this->config->get('params.dbm')}]. Please check.", get_class($this));
                     return;
                 }
 
             } else {
 
-                $this->log::error("No DBM! You must set '&DBM=siteName-indexName'", get_class());
+                $this->log::error("No DBM! You must set '&DBM=siteName-indexName'", get_class($this));
                 return;
 
             }
@@ -106,7 +106,7 @@
             $this->query = new SearchParser();
 
         // ELASTIC CLIENT
-            $this->log::info('Elastic Client initialise..', get_class());
+            $this->log::info('Elastic Client initialise..', get_class($this));
             try {
 
             //print_r( $this->config->get('params.elastic_client_config.hosts') );die;
@@ -133,24 +133,24 @@
 
             $info = $this->client->info();
             $this->query->set('elastic_version', $info['version']['number']);
-            $this->log::info("elastic_version: [{$info['version']['number']}]", get_class());
+            $this->log::info("elastic_version: [{$info['version']['number']}]", get_class($this));
 
             // Get All QueryParams
             //print_r($this->query->getQueryParams()); //die;
             //print_r($this->config);die;
             //print_r($this->query->get('params.idx') );die;
 
-            $this->log::info("search_query: [{$this->query->get('search_query')}]", get_class());
-            $this->log::info("search_terms: [{$this->query->get('search_terms')}]", get_class());
-            //$x = print_r($this->query->get('search_array'), true); $this->log::info("search_array: [$x]", get_class());
-            $this->log::info("search_fields: [{$this->query->get('search_fields')}]", get_class());
+            $this->log::info("search_query: [{$this->query->get('search_query')}]", get_class($this));
+            $this->log::info("search_terms: [{$this->query->get('search_terms')}]", get_class($this));
+            //$x = print_r($this->query->get('search_array'), true); $this->log::info("search_array: [$x]", get_class($this));
+            $this->log::info("search_fields: [{$this->query->get('search_fields')}]", get_class($this));
 
             if(!empty($this->config->get('params.idx'))){
                 $idx = $this->config->get('params.idx');
-                $this->log::info("searching index: [$idx] (params.idx)", get_class());
+                $this->log::info("searching index: [$idx] (params.idx)", get_class($this));
             }else{
                 $idx = $this->config->get('dbm.dbm_index');
-                $this->log::info("searching index: [$idx] (dbm.dbm_index)", get_class());
+                $this->log::info("searching index: [$idx] (dbm.dbm_index)", get_class($this));
             }
 
 
@@ -208,7 +208,7 @@
             if (intval($this->query->get('elastic_version')) >= 7 ){
 
                 if(isset($query['body']['aggs'])){
-                    $this->log::info("Version adjustment:: setting Aggs key '_key' in place of '_term' [v" . $this->query->get('elastic_version') .']', get_class());
+                    $this->log::info("Version adjustment:: setting Aggs key '_key' in place of '_term' [v" . $this->query->get('elastic_version') .']', get_class($this));
                     $query['body']['aggs'] = Arr::replaceKeys('_term', '_key', $query['body']['aggs']);
 
                     $query['body']['aggs'] = Arr::replaceKeys('interval', 'calendar_interval', $query['body']['aggs']);
@@ -218,7 +218,7 @@
             }else{
 
                 if(isset($query['body']['aggs'])){
-                    $this->log::info("Version adjustment:: setting Aggs key '_term' in place of '_key' [v" . $this->query->get('elastic_version') .']', get_class());
+                    $this->log::info("Version adjustment:: setting Aggs key '_term' in place of '_key' [v" . $this->query->get('elastic_version') .']', get_class($this));
                     $query['body']['aggs'] = Arr::replaceKeys('_key', '_term', $query['body']['aggs']);
 
                     $query['body']['aggs'] = Arr::replaceKeys('calendar_interval', 'interval', $query['body']['aggs']);
@@ -230,17 +230,17 @@
         // type & track_total_hits & skip_duplicates
             if (intval($this->query->get('elastic_version')) < 7) {
 
-                $this->log::info("Version adjustment:: setting 'type=doc' [v" . $this->query->get('elastic_version') .']', get_class());
+                $this->log::info("Version adjustment:: setting 'type=doc' [v" . $this->query->get('elastic_version') .']', get_class($this));
                 Arr::set($query, 'type', $this->config->get('dbm.dbm_type'));
 
                 if (Arr::searchKeys($query, 'track_total_hits')) {
-                    $this->log::info("Version adjustment:: deleting key track_total_hits:: track_total_hits", get_class());
+                    $this->log::info("Version adjustment:: deleting key track_total_hits:: track_total_hits", get_class($this));
                     Arr::del($query, "body.track_total_hits");
                 }
 
                 if( !empty($query['suggest']) ){
                     if (Arr::searchKeys($query['suggest'], 'skip_duplicates')) {
-                        $this->log::info("Version adjustment:: deleting key skip_duplicates", get_class());
+                        $this->log::info("Version adjustment:: deleting key skip_duplicates", get_class($this));
                         Arr::del($query['suggest'], "skip_duplicates");
                     }
                 }
@@ -267,7 +267,7 @@
             //print_r($query_test);//die;
             if(empty($query_test['body']['query']) and empty($this->query->get('sug')) ){
 
-                $this->log::error('There\'s no query to run! Check your search syntax.', get_class());
+                $this->log::error('There\'s no query to run! Check your search syntax.', get_class($this));
                 return;
 
             }
@@ -278,7 +278,7 @@
                 $nobool = $this->config->get('url.qs_array.nobool');
                 if( preg_match('/must/', $nobool) ){
 				
-                    $this->log::info("NOBOOL: Setting [must] to null", get_class());
+                    $this->log::info("NOBOOL: Setting [must] to null", get_class($this));
                     if( isset($query['body']['query']['bool']['must']) ){
                         unset($query['body']['query']['bool']['must']);
                     }
@@ -287,7 +287,7 @@
 
                 if( preg_match('/should/', $nobool) ){
 				
-                    $this->log::info("NOBOOL: Setting [should] to null", get_class());
+                    $this->log::info("NOBOOL: Setting [should] to null", get_class($this));
                     if( isset($query['body']['query']['bool']['should']) ){
                         unset($query['body']['query']['bool']['should']);
                     }
@@ -296,7 +296,7 @@
 
                 if( preg_match('/filter/', $nobool) ){
 				
-                    $this->log::info("NOBOOL: Setting [filter] to null", get_class());
+                    $this->log::info("NOBOOL: Setting [filter] to null", get_class($this));
                     if( isset($query['body']['query']['bool']['filter']) ){
                         unset($query['body']['query']['bool']['filter']);
                     }
@@ -305,7 +305,7 @@
                 
                 if( preg_match('/highlight/', $nobool) ){
 				
-                    $this->log::info("NOBOOL: Setting [highlight] to null", get_class());
+                    $this->log::info("NOBOOL: Setting [highlight] to null", get_class($this));
                     if( isset($query['body']['highlight']) ){
                         unset($query['body']['highlight']);
                     }
@@ -314,7 +314,7 @@
 
                 if( preg_match('/aggs/', $nobool) ){
 				
-                    $this->log::info("NOBOOL: Setting [aggs] to null", get_class());
+                    $this->log::info("NOBOOL: Setting [aggs] to null", get_class($this));
                     if( isset($query['body']['aggs']) ){
                         unset($query['body']['aggs']);
                     }
@@ -323,7 +323,7 @@
                
                 if( preg_match('/rescore/', $nobool) ){
 				
-                    $this->log::info("NOBOOL: Setting [rescore] to null", get_class());
+                    $this->log::info("NOBOOL: Setting [rescore] to null", get_class($this));
                     if( isset($query['body']['rescore']) ){
                         unset($query['body']['rescore']);
                     }
@@ -332,7 +332,7 @@
 
                 if( preg_match('/suggest/', $nobool) ){
 				
-                    $this->log::info("NOBOOL: Setting [suggest] to null", get_class());
+                    $this->log::info("NOBOOL: Setting [suggest] to null", get_class($this));
                     if( isset($query['body']['suggest']) ){
                         unset($query['body']['suggest']);
                     }
@@ -341,7 +341,7 @@
 
                 if( preg_match('/query/', $nobool) ){
 				
-                    $this->log::info("NOBOOL: Setting [query] to null", get_class());
+                    $this->log::info("NOBOOL: Setting [query] to null", get_class($this));
                     if( isset($query['body']['query']) ){
                         unset($query['body']['query']);
                     }
@@ -370,7 +370,7 @@
                 $m = '{' . explode('{', $m, 2)[1]; // v8.2 !! Exceptions used to be JSON now they have e.g.404 Not Found: { json }
                 //print_r($e);
                 $m = json_encode(json_decode($m,true), JSON_PRETTY_PRINT);
-                $this->log::error($m, 'Search Exception', get_class());
+                $this->log::error($m, 'Search Exception', get_class($this));
                 $this->logQueryDetails($query, 'Search query');
                 return; // ToDo: return XML Error message
 
@@ -380,7 +380,7 @@
                 $m = '{' . explode('{', $m, 2)[1]; // v8.2 !! Exceptions used to be JSON now they have e.g.404 Not Found: { json }
                 //print_r($e);
                 $m = json_encode(json_decode($m,true), JSON_PRETTY_PRINT);
-                $this->log::error($m, 'Exception', get_class());
+                $this->log::error($m, 'Exception', get_class($this));
                 $this->logQueryDetails($query, 'Search query: No Nodes Available');
                 return; // ToDo: return XML Error message
 
@@ -390,7 +390,7 @@
                 $m = '{' . explode('{', $m, 2)[1]; // v8.2 !! Exceptions used to be JSON now they have e.g.404 Not Found: { json }
                 //print_r($e);
                 $m = json_encode(json_decode($m,true), JSON_PRETTY_PRINT);
-                $this->log::error($m, 'Exception', get_class());
+                $this->log::error($m, 'Exception', get_class($this));
                 $this->logQueryDetails($query, 'Search query: Search Error');
                 return; // ToDo: return XML Error message
                 
@@ -409,46 +409,46 @@
             $this->logQueryDetails($query, 'Search Query');
 
         // DISPLAY THE RESULTS
-            $this->log::info("ResultsInfo - start..", get_class());
+            $this->log::info("ResultsInfo - start..", get_class($this));
 
             $format = $format ?: 'xml';
             $format = strtolower($format);
 
             if( $format == 'raw' ){
 
-                $this->log::info("ResultsInfo - PHP.", get_class());
+                $this->log::info("ResultsInfo - PHP.", get_class($this));
                 $x = print_r($results, true);
                 return $x; //$results; // todo - this is for testing only
 
             }elseif ($format == 'xml'){
 
                 $res = new ResultsInfoXML($results, $this->query->getQueryParams());
-                $this->log::info("ResultsInfo - XML.", get_class());
+                $this->log::info("ResultsInfo - XML.", get_class($this));
                 return $res->create();
 
             }elseif ( $format == 'json' ){
                 // this tracks Elastic output
                 //$res = json_encode($results, JSON_PRETTY_PRINT);
                 $res = new ResultsInfoJSON($results, $this->query->getQueryParams());
-                $this->log::info("ResultsInfo - JSON.", get_class());
+                $this->log::info("ResultsInfo - JSON.", get_class($this));
                 return $res->create();
 
             }elseif ( $format == 'json2' ){
                 // this tracks XML2
                 $res = new ResultsInfoJSON2($results, $this->query->getQueryParams());
-                $this->log::info("ResultsInfo - JSON2.", get_class());
+                $this->log::info("ResultsInfo - JSON2.", get_class($this));
                 return $res->create();
 
             }elseif ( $format == 'doc' ){
                 // i.e. a XML dump data file
                 $res = new ResultsInfoDoc($results, $this->query->getQueryParams());
-                $this->log::info("ResultsInfo - Doc.", get_class());
+                $this->log::info("ResultsInfo - Doc.", get_class($this));
                 return $res->create();
 
             }elseif ( $format == 'html' ){
                 // i.e. a nightmare
                 $res = new ResultsInfoHTML($results, $this->query->getQueryParams());
-                $this->log::info("ResultsInfo - HTML.", get_class());
+                $this->log::info("ResultsInfo - HTML.", get_class($this));
                 return $res->create();
 
             }

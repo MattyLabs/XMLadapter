@@ -162,7 +162,7 @@
 
                             if( isset($source[$field_key]['@cdata']) ){
                             // don't add it back - issue a warning
-                                $this->log::warning("Check your indexing: [$field_key] indexed with CDATA section and DBM config adds back CDATA via default_cdata_output param.", get_class());
+                                $this->log::warning("Check your indexing: [$field_key] indexed with CDATA section and DBM config adds back CDATA via default_cdata_output param.", get_class($this));
 
                             }else{
 
