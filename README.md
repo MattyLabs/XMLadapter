@@ -1,5 +1,7 @@
 # MattyLabs: XMLAdapter
-A very simple class written in PHP to convert HTML name=value pairs into an **Elasticsearch** query. The class will also run the search and return the search results as either XML, JSON or a raw array.
+A very simple Elasticsearch client written in PHP with a simplified search syntax of HTML name=value pairs (i.e. web form values) which are transcribed into the **Elasticsearch** query_string search syntax. The class will also run the search and return the search results as either XML, JSON or a raw array.
+
+Configuration comes in the form of a DBM configuration file for each index (sample provided) see www.
 
 The class focuses primarily on the query_string query syntax but will also generate simple multi_match queries. The following search requests are supported:
 
