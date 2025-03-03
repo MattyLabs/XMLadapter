@@ -104,9 +104,9 @@
         public function init($querystring = null, $params = null)
         {
             $this->log =  new Logger\SimpleLogger();
-            /* VERSION: 1.~ for PHP v5.6+. 2.~ for PHP v7+ */
-            /* - 2.1.0: Updated for compatibility with PHP v8.3  */
-            $this->log::info("Initialising Config: [XMLAdapter v2.1.0]", get_class($this));
+            /* VERSION: 3.~ Client free 2.~ for PHP v7+ 1.~ for PHP v5.6+. */
+            /* - v3.0.0 - version friendly without officail Elastic client  */
+            $this->log::info("Initialising Config: [XMLAdapter v3.0.0]", get_class($this));
 
         // Load $params
             if($params){

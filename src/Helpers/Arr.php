@@ -344,4 +344,32 @@
             return $results;
         }
 
+        /**
+         * Return simple array with values re-ordered per reference array 
+         *
+         * @param  array  $arr
+         * @param  array  $order_by
+         *
+         * @return array
+         */
+        public static function reOrder($arr, $order_by)
+        {
+            $arr_ordered = array();
+            foreach ($order_by as $key) {
+			
+                if(in_array($key, $arr)){
+                    $arr_ordered[] = $key;
+                }
+                
+            }
+            
+            if(empty($arr_orderedarr)){
+                // ?Better unsorted than ruined?
+                return $arr;
+            }else{
+                return $arr_ordered;
+            }
+            
+        }
+
     }

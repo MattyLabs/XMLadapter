@@ -91,7 +91,6 @@
 
                 }   // end fields loop
 
-
             // ID
                 $add['id'] = $this->params['from']+1 + $key;
                 // Score %

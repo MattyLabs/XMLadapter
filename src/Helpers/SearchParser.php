@@ -52,7 +52,7 @@
             $this->setPageCount();
             $this->setPageSize();
             $this->setMinShouldMatch();
-            $this->setHosts();
+           
 
             //$this->log::info("search_query:[{$this->query_params['search_query']}]", get_class($this));
             //$pr = print_r($this->query_params, true);$this->log::info("$pr", get_class($this));
@@ -412,8 +412,10 @@
                     $val = str_replace(">", '&gt;', $val);
                     $val = str_replace("<=", '&lte;', $val);
                     $val = str_replace(">=", '&gte;', $val);
- 		    $val = str_replace("{63}", '?', $val);
-		    $val = str_replace("{38}", '&', $val);
+		 		    $val = str_replace("{63}", '?', $val);
+				    $val = str_replace("{38}", '&', $val);
+                    $val = str_replace("[63]", '?', $val);
+                    $val = str_replace("[38]", '&', $val);
 
                     if(substr_count($val, '"') % 2 != 0){
                         // if there are an odd number of quotes now, get rid of them all!
@@ -906,187 +908,7 @@
         }
 
 
-        /**
-         *  setHosts()
-         *  - You can pass in the default Elasticsearch client_config when creating a new XMLAdapter()
-         *  - - if you want to set more than the hosts e.g. Authentication credentials etc. use this route
-         *  - We only really need the hosts which can also be set (along with Cloud credentials) in the DBM
-         *  - - 'dbm_elastic_hosts'
-         *  - - 'dbm_elastic_cloud'
-         *  v8.2 seems to require you set the port too!
-         *
-         */
-        protected function setHosts(){
-
-            $this->log::info("setHosts()", get_class($this));
-            //$ecc = print_r($this->config->get('params.elastic_client_config'), true);  $this->log::info("gak: [$ecc]", get_class($this));
-            // N.B. this is the Server default and can be set initially in php.server.defaults::$params['elastic_client_config']
-            if(!empty($this->config->get('params.elastic_client_config')) ){
-                $this->log::info("..loading elastic_client_config (from php.server.defaults).", get_class($this));
-                $client_config = $this->config->get('params.elastic_client_config');
-            }else{
-                $client_config = [];
-            }
-     
-            // always override the server.default hosts with the specific dbm hosts
-            if(!empty($this->config->get('dbm.dbm_elastic_hosts'))){
-                
-                $string = implode('|', $this->config->get('dbm.dbm_elastic_hosts'));
-                $this->log::info("..setting dbm_elastic_hosts (from DBM) [$string]", get_class($this));
-                $client_config['hosts'] = $this->config->get('dbm.dbm_elastic_hosts');
-            }
-    
-            // if still empty try the local server
-            if(empty($client_config['hosts'])){
-
-                $client_config['hosts'] = [
-                    '127.0.0.1', // fallback
-                    $this->config->get('params.this_server_ip'),    // \Config::setServerIP() [N.B.VPN may make LOCAL_ADDR inaccurate]
-                ];
-                $string = implode('|', $client_config['hosts']);
-                $this->log::info("..setting fallback hosts [$string]", get_class($this));
-                
-            }
-
-            // Clean up hosts from Server Defaults & DBM etc.
-            $this->check_hosts_port($client_config);
-
-            // Sniff for available nodes before doing the search. Default: 'dbm_sniff_hosts' = 'on'
-            $sniff = @$this->config->get('params.sniff_hosts') ?: 'on';
-            if(!empty($this->config->get('dbm.dbm_sniff_hosts') )){
-                $sniff = $this->config->get('dbm.dbm_sniff_hosts') ;
-            }
-            if($sniff === 'on'){
-                $this->check_hosts_avail($client_config); 
-            }
             
-            // Elastic v8.2.2 seems to require the port whereas previous versions did not!
-            $this->check_hosts_port($client_config);
-   
-            if( !empty($client_config['hosts']) ){
-
-                $hosts_string = implode('|', $client_config['hosts']);
-                $this->log::info("Using Elastic hosts: [$hosts_string]", get_class($this));
-                //print_r($client_config);
-                //print_r($this->config->get('dbm'));
-
-            } else {
-
-                $this->log::error("Unable to set Elastic hosts.", get_class($this));
-
-            }
-
-            if( !empty($this->config->get('dbm.dbm_elastic_cloud')) ){
-
-                if( !empty( $this->config->get('dbm.dbm_elastic_cloud.elasticCloudId') )){
-                $client_config['elasticCloudId'] = $this->config->get('dbm.dbm_elastic_cloud.elasticCloudId');
-                }
-               
-                $client_config['basicAuthentication'] = [
-                    $this->config->get('dbm.dbm_elastic_cloud.username'),
-                    $this->config->get('dbm.dbm_elastic_cloud.password')
-                ];
-
-            }
-
-            $this->query_params['elastic_client'] = $client_config;
-            //print_r($client_config); die;
-        }
-
-        /**
-         * @param $hosts - checks cluster for available hosts and removes any that are 'down'
-         * @return void
-         */
-        protected function check_hosts_avail(&$cfg)
-        {
-            
-			$auth = '';
-            $hosts = $cfg['hosts'];
-			$avail_hosts = array();
-            
-            $this->log::info("Starting sniffer", get_class($this));
-            if( !empty($this->config->get('params.elastic_client_config.basicAuthentication')) ){
-                $auth = ( implode(':', $this->config->get('params.elastic_client_config.basicAuthentication')) );
-                //$this->log::info("..using credentials: [$auth]", get_class($this));
-            }
-
-            foreach($hosts as $h){
-            
-                $arr = parse_url($h);
-                $prot = @$arr['scheme'] ?: @$this->config->get('params.default_protocol') ?: "http";
-                $host = @$arr['host'] ?: @$arr['path'] ?: '';
-                $port = @$arr['port'] ?: 9200;
-                
-                if(!empty($auth)){
-                    $rurl = "$prot://$auth@$host:$port/_nodes/_all/http";	
-                } else {
-                    $rurl = "$prot://$host:$port/_nodes/_all/http";	
-                }
-                
-                $this->log::info("..sniffing host availability: [$rurl]", get_class($this));
-				$connect_timeout = @$this->config->get('dbm.dbm_connect_timeout') ?: 250;
-				$timeout = @$this->config->get('dbm.dbm_timeout') ?: 50;
-                $options = [ 'connect_timeout' => $connect_timeout, 'timeout' => $timeout ]; // in milliseconds
-				$json = hf::getRest($rurl, $options);	
-                $this->log::info("..sniffer done. ct[$connect_timeout] t[$timeout]", get_class($this));
-                
-                if(!empty($json)){
-                    
-                    $data = json_decode($json, true);
-					$avail_hosts = Arr::searchKeys($data, 'host');
-					foreach($avail_hosts as $idx=>$avail_host){
-					
-						$avail_hosts[$idx] = "$prot://$avail_host:$port";
-						
-					}
-
-                    $cfg['hosts'] = $avail_hosts;
-                    $string = implode('|', $cfg['hosts']);
-                    $this->log::info("..sniffer found available hosts: [$string]", get_class($this));
-                    return;
-            
-                } else {
-
-                    $this->log::info("..sniffer could not reach host: [$h]", get_class($this));
-
-                }
-                
-            }
-
-            $this->log::error("..sniffer could not find any hosts!", get_class($this));
-            
-        }
-
-        /**
-         * @param $client_config - adds default port to host entries if not already supplied
-         * @return void
-         */
-        protected function check_hosts_port(&$cfg){
-
-            $hosts = $cfg['hosts'];
-            $avail = array();
-
-            foreach($hosts as $h){
-
-                $arr = parse_url($h);
-                // Send in the protocol - set it in the DBM - last resort http (most of our servers)
-                $prot = @$arr['scheme'] ?: @$this->config->get('params.default_protocol') ?: "http"; // i.e. specify or it will default to this
-               
-                $this->config->set('params.default_protocol', $prot);  // ideally save what was sent in via DBM
-                $host = @$arr['host'] ?: @$arr['path'] ?: '';
-                $port = @$arr['port'] ?: 9200;
-                if(empty($host)){
-                    $this->log::error("Unable to parse host string: [$h]", get_class($this));
-                }else{
-                     $avail[] = "$prot://$host:$port";
-                }
-               
-
-            }
-
-            $cfg['hosts'] = $avail;
-
-        }
         /**
          *  checkISBNQuery()
          *  - we want to know if the search is for a single unique id as this affects other parts of the query

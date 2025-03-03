@@ -216,9 +216,18 @@
         /**
          * @param $rurl
          * @param array|null $options
-         * @return false|string
+         * @return string
+         * 
+         * N.B. For backwards compatibility with v5.6 $options is a nullable array 
+         * [?array $options (v7,1+) instead of $options = null (v5.6)]
          */
-        public static function getRest($rurl, array $options = Null){
+        public static function get_rest($rurl, $body, array $options)
+        {
+
+            $ct = @$options['connect_timeout'] ?: 1000; // N.B. send "0" for unlimited timeout
+		    $to = @$options['timeout'] ?: 1000;
+		    $rq = @$options['request_type'] ?: "GET";	// GET|POST
+            //print_r($body); die;
 
             if( !empty($options['header']) ){
 				
@@ -232,18 +241,24 @@
                     "Connection: Close"
                 ];
                 
+                if(!empty($options['auth'])){
+                    $auth = base64_encode($options['auth']);
+                    array_unshift($header, "Authorization: Basic $auth");
+                }
+                
             }
             
             $curl_options = [
     
+                CURLOPT_CUSTOMREQUEST => "$rq",
+			    CURLOPT_POSTFIELDS => "$body",
                 CURLOPT_URL	=> $rurl,
                 CURLOPT_HEADER => false,	// 0 removes headers from response leaving just the JSON
                 CURLOPT_HTTPHEADER => $header,
-                CURLOPT_TIMEOUT => @$options['timeout'] ?: 1,
-                CURLOPT_CONNECTTIMEOUT_MS => @$options['connect_timeout'] ?: @$options['timeout'] ?: 500,
-				CURLOPT_TIMEOUT_MS => @$options['timeout'] ?: 250,
+                CURLOPT_CONNECTTIMEOUT_MS => $ct,
+				CURLOPT_TIMEOUT_MS => $to,
                 CURLOPT_RETURNTRANSFER => true, // sets curl_exec() to return request body e.g. as $response
-                CURLOPT_FAILONERROR => true,
+                CURLOPT_FAILONERROR => false,
                 CURLOPT_FOLLOWLOCATION => true,
                 CURLOPT_ENCODING => '',	
                 
@@ -255,29 +270,75 @@
                 
             ];
             
-            //print_r($curl_options); die;
-            $curl = curl_init($rurl);
-            curl_setopt_array($curl, ($curl_options));	
+            //print_r($curl_options); //die;
+            $curl = curl_init();
+            curl_setopt_array($curl, $curl_options);	
             $response = curl_exec($curl);
             //print_r("[$response]");
+            $info = curl_getinfo($curl);
+            //$x = print_r($info, true); echo "<!-- $x -->\r\n"; die;
+
+            if( $info['http_code'] == 200 ){
+                // return $response
+                curl_close($curl);
+                return $response;
+            }
+                
+            if( $info['http_code'] >= 400 ){
+                // return $response // make sure CURLOPT_FAILONERROR = false so we can read the Elastic API response
+                curl_close($curl);
+                return $response;
+                
+            }
+           
             if (curl_errno($curl)){
                 
-                //$info = rawurldecode(var_export(curl_getinfo($curl),true));
-                //$response = 'getRest() Error: ' . curl_error($curl) . "$info";
-                //print_r($info . $response); die;
-                $response = '';
+                $cerr = curl_errno($curl);
+                $x = print_r($info, true); //echo "<!-- cUrl ERR ($cerr): getinfo: $x --\r\n"; //die;
+                
+                if(curl_errno($curl) == '28'){
+                    $emsg = "REST request ($cerr) timed out. ct[$ct] to[$to]";
+                }elseif(curl_errno($curl) == '22'){
+                    $emsg = "BAD REST request ($cerr) (http:400)";
+                }else{
+                    $emsg = "CURL Err $x";
+                }
+
+                $error_array = [
+                    'errordetails' => [
+                        'error_rest'    => true,
+                        'errorcode'     => $cerr,
+                        'errormessage'  => "CURL Error: $emsg",
+                    ]
+                ];
+               
+                $response = json_encode($error_array);
+                curl_close($curl);
+                return $response;
                 
             } else {
 
+                if( $info['http_code'] == 0 or $info['size_download'] < 1){
+
+                    $emsg = "No data received: [{$info['url']}]";
+                    $error_array = [
+                        'errordetails' => [
+                            'error_rest'    => true,
+                            'errorcode'     => curl_errno($curl),
+                            'errormessage'  => "Unknown Error: $emsg",
+                        ]
+                    ];
+                   
+                    $response = json_encode($error_array); 
+                    curl_close($curl);
+                    return $response;
+                }
               //$skip = intval(curl_getinfo($curl, CURLINFO_HEADER_SIZE)); 
               //$responseHeader = substr($response, 0, $skip);
               //$response = substr($response,$skip);
 
             }  
             
-            curl_close($curl);
-            return $response;
-
         }
 
 
@@ -297,7 +358,7 @@
             foreach($parts as $p){
 
                 $ptrn = "@<" . $p . "(?:>| [\s\S]+?>)(|[\s\S]+?)(?:<\/" . $p . ">)@";
-                $xml = ReturnPtrnMatches($xml, $ptrn, $tags, $delimiter, $p);
+                $xml = HelperFunctions::ReturnPtrnMatches($xml, $ptrn, $tags, $delimiter, $p);
 
             }
 
@@ -313,6 +374,55 @@
             return $xml;
         }
 
+       /**
+         * @param $explain array
+         *
+         */
+        public static function json_error(&$explain)
+        {
+            
+            $explain = '';
+        
+            switch (json_last_error()) {
+                
+                case JSON_ERROR_NONE:
+                    $explain = 'No JSON errors';
+                    return false;
+                break;
+                
+                case JSON_ERROR_DEPTH:
+                    $explain = ' - Maximum stack depth exceeded';
+                    return true;
+                break;
+                
+                case JSON_ERROR_STATE_MISMATCH:
+                    $explain =  ' - Underflow or the modes mismatch';
+                    return true;
+                break;
+                
+                case JSON_ERROR_CTRL_CHAR:
+                    $explain =  ' - Unexpected control character found';
+                    return true;
+                break;
+                
+                case JSON_ERROR_SYNTAX:
+                    $explain =  ' - Syntax error, malformed JSON';
+                    return true;
+                break;
+                
+                case JSON_ERROR_UTF8:
+                    $explain =  ' - Malformed UTF-8 characters, possibly incorrectly encoded';
+                    return true;
+                break;
+                
+                default:
+                    $explain =  ' - Unknown error';
+                    return true;
+                break;
+                
+            }
+
+        }
 
         /**
          * @param $xml
@@ -322,7 +432,7 @@
          * @param $fn
          * @return false|string
          */
-        private function ReturnPtrnMatches($xml, $pattern, $tags, $delimiter, $fn){
+        private static function ReturnPtrnMatches($xml, $pattern, $tags, $delimiter, $fn){
 
             preg_match_all($pattern, $xml, $matches, PREG_PATTERN_ORDER);
 

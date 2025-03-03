@@ -9,11 +9,8 @@
     use MattyLabs\XMLAdapter\Exceptions\GeneralException;
     use MattyLabs\XMLAdapter\Helpers\SearchParser;
     use MattyLabs\XMLAdapter\Helpers\Arr;
+    use MattyLabs\XMLAdapter\Helpers\HelperFunctions as hf;
 
-	use \Elastic\Elasticsearch\ClientBuilder;
-    use \Elastic\Transport\Exception\NoNodeAvailableException;
-    use \Elastic\Elasticsearch\Exception\ServerResponseException;
-	use \Symfony\Component\HttpClient\Psr18Client;
 
 
     /**
@@ -74,29 +71,14 @@
         public function search($format = null)
         {
 
-            //print_r($this->config);die;
-            if (!empty($this->config->get('params.dbm'))) {
+        /*
+         *  setHosts
+         *  - read in server.defaults from $config
+         *  - read in DBM
+         *  - sniff available hosts
+         */
+            $this->setHosts();
 
-                $path = $this->config->get('params.site_root') . "" . $this->config->get('sitename') . "/include/config/{$this->config->get('params.dbm')}-dbm.inc";
-                $this->log::info("Loading DBM >> config.dbm: [$path]", get_class($this));
-                if(file_exists($path)){
-
-                    $arr = require($path);
-                    $this->config->set('dbm', $arr);
-                    $this->log::info("DBM index: [{$this->config->get('dbm.dbm_index')}]", get_class($this));
-
-                }else{
-
-                    $this->log::error("Failed to load DBM [{$this->config->get('params.dbm')}]. Please check.", get_class($this));
-                    return;
-                }
-
-            } else {
-
-                $this->log::error("No DBM! You must set '&DBM=siteName-indexName'", get_class($this));
-                return;
-
-            }
 
         /*
          *  SearchParser
@@ -105,44 +87,14 @@
          */
             $this->query = new SearchParser();
 
-        // ELASTIC CLIENT
-            $this->log::info('Elastic Client initialise..', get_class($this));
-            try {
 
-            //print_r( $this->config->get('params.elastic_client_config.hosts') );die;
-            //print_r( $this->query->get('elastic_client') ); die;
-                $this->client = ClientBuilder::fromConfig( $this->query->get('elastic_client') );
-				//print_r($this->client->info());die;
-				//$this->client = ClientBuilder::create()
-				//	->setHosts($this->config->get('params.elastic_client_config.hosts'))
-				//	->setHttpClient(new Psr18Client)
-				//	->build();
-				//$this->client->setHttpClient(new Psr18Client);
-
-            } catch ( \Elastic\Elasticsearch\Exception\NoNodesAvailableException $e ){
-
-                $m = $e->getMessage();
-                $m = json_encode(json_decode($m,true), JSON_PRETTY_PRINT);
-                $this->log::error($m, 'Search Exception');
-                return;
-
-            }
-
-
-            // Quicker to get the version from the client than via REST call to host
-
-            $info = $this->client->info();
-            $this->query->set('elastic_version', $info['version']['number']);
-            $this->log::info("elastic_version: [{$info['version']['number']}]", get_class($this));
-
-            // Get All QueryParams
-            //print_r($this->query->getQueryParams()); //die;
-            //print_r($this->config);die;
-            //print_r($this->query->get('params.idx') );die;
+            //print_r($this->query);die;
+            $host_str =  $this->config->get('params.active_elastic_host');
+            $this->log::info("active host: [$host_str]", get_class($this));
+            $this->log::info("elastic_version: [{$this->config->get('params.elastic_version')}]", get_class($this));
 
             $this->log::info("search_query: [{$this->query->get('search_query')}]", get_class($this));
             $this->log::info("search_terms: [{$this->query->get('search_terms')}]", get_class($this));
-            //$x = print_r($this->query->get('search_array'), true); $this->log::info("search_array: [$x]", get_class($this));
             $this->log::info("search_fields: [{$this->query->get('search_fields')}]", get_class($this));
 
             if(!empty($this->config->get('params.idx'))){
@@ -189,7 +141,7 @@
 
             ];
 
-            //print_r($query);die;
+            
 
         // We need to cautious about deleting blanks e.g. don't remove 'query' from should clause just because it is empty
             foreach(['aggs', 'collapse', 'highlight', 'rescore', 'sort', 'suggest'] as $key){
@@ -205,10 +157,10 @@
 
         // Version compatibility checks:
             // AGGS
-            if (intval($this->query->get('elastic_version')) >= 7 ){
+            if (intval($this->config->get('params.elastic_version')) >= 7 ){
 
                 if(isset($query['body']['aggs'])){
-                    $this->log::info("Version adjustment:: setting Aggs key '_key' in place of '_term' [v" . $this->query->get('elastic_version') .']', get_class($this));
+                    $this->log::info("Version adjustment:: setting Aggs key '_key' in place of '_term' [v" . $this->config->get('params.elastic_version') .']', get_class($this));
                     $query['body']['aggs'] = Arr::replaceKeys('_term', '_key', $query['body']['aggs']);
 
                     $query['body']['aggs'] = Arr::replaceKeys('interval', 'calendar_interval', $query['body']['aggs']);
@@ -218,7 +170,7 @@
             }else{
 
                 if(isset($query['body']['aggs'])){
-                    $this->log::info("Version adjustment:: setting Aggs key '_term' in place of '_key' [v" . $this->query->get('elastic_version') .']', get_class($this));
+                    $this->log::info("Version adjustment:: setting Aggs key '_term' in place of '_key' [v" . $this->config->get('params.elastic_version') .']', get_class($this));
                     $query['body']['aggs'] = Arr::replaceKeys('_key', '_term', $query['body']['aggs']);
 
                     $query['body']['aggs'] = Arr::replaceKeys('calendar_interval', 'interval', $query['body']['aggs']);
@@ -228,9 +180,9 @@
             }
 
         // type & track_total_hits & skip_duplicates
-            if (intval($this->query->get('elastic_version')) < 7) {
+            if (intval($this->config->get('params.elastic_version')) < 7) {
 
-                $this->log::info("Version adjustment:: setting 'type=doc' [v" . $this->query->get('elastic_version') .']', get_class($this));
+                $this->log::info("Version adjustment:: setting 'type=doc' [v" . $this->config->get('params.elastic_version') .']', get_class($this));
                 Arr::set($query, 'type', $this->config->get('dbm.dbm_type'));
 
                 if (Arr::searchKeys($query, 'track_total_hits')) {
@@ -358,42 +310,22 @@
             $this->log::info('Running search query..');
             $this->log::time('SEARCH');
 
-            try {
+            $host = $this->config->get('params.active_elastic_host');
+            $options = ['timeout' => 15000];
+            $rurl = "$host/{$query['index']}/_search/";
+            $json = hf::get_rest($rurl, json_encode($query['body']), $options);
+            $results = json_decode($json, true);
 
-                $results = $this->client->search($query);
-                //print_r($results->asArray());die;
-                //Elastic\Elasticsearch\Exception\ClientResponseException
-                //\Elasticsearch\Common\Exceptions\BadRequest400Exception|\Elasticsearch\Common\Exceptions\Missing404Exception|\Elasticsearch\Common\Exceptions\ServerErrorResponseException
-            } catch ( \Elastic\Elasticsearch\Exception\ClientResponseException $e) {
-
-                $m = $e->getMessage();
-                $m = '{' . explode('{', $m, 2)[1]; // v8.2 !! Exceptions used to be JSON now they have e.g.404 Not Found: { json }
-                //print_r($e);
-                $m = json_encode(json_decode($m,true), JSON_PRETTY_PRINT);
-                $this->log::error($m, 'Search Exception', get_class($this));
-                $this->logQueryDetails($query, 'Search query');
-                return; // ToDo: return XML Error message
-
-            } catch( \Elastic\Transport\Exception\NoNodeAvailableException $e) {
-
-                $m = $e->getMessage();
-                $m = '{' . explode('{', $m, 2)[1]; // v8.2 !! Exceptions used to be JSON now they have e.g.404 Not Found: { json }
-                //print_r($e);
-                $m = json_encode(json_decode($m,true), JSON_PRETTY_PRINT);
-                $this->log::error($m, 'Exception', get_class($this));
-                $this->logQueryDetails($query, 'Search query: No Nodes Available');
-                return; // ToDo: return XML Error message
-
-            } catch( \Elastic\Elasticsearch\Exception\ServerResponseException $e) {
-
-                $m = $e->getMessage();
-                $m = '{' . explode('{', $m, 2)[1]; // v8.2 !! Exceptions used to be JSON now they have e.g.404 Not Found: { json }
-                //print_r($e);
-                $m = json_encode(json_decode($m,true), JSON_PRETTY_PRINT);
-                $this->log::error($m, 'Exception', get_class($this));
-                $this->logQueryDetails($query, 'Search query: Search Error');
-                return; // ToDo: return XML Error message
+        //check for REST API error (response not proper JSON)
+            if(hf::json_error($explain)){
+                $this->log::info("Error Search: $explain", get_class($this));
+                return;
+            }
                 
+        // check for CURL error (url wrong or timed out)
+            if( @$results['errordetails']['error_rest'] == true){
+                $this->log::info("Error CURL: ({$results['errordetails']['errorcode']}) {$results['errordetails']['errormessage']} ", get_class($this));
+                return;
             }
 
             if( isset($results['hits']['total']['value']) ){
@@ -453,6 +385,241 @@
 
             }
 
+
+        }
+
+              /**
+         *  setHosts()
+         *  - You can pass in the default Elasticsearch client_config when creating a new XMLAdapter()
+         *  - - if you want to set more than the hosts e.g. Authentication credentials etc. use this route
+         *  - We only really need the hosts which can also be set (along with Cloud credentials) in the DBM
+         *  - - 'dbm_elastic_hosts'
+         *  - - 'dbm_elastic_cloud'
+         *  v8.2 seems to require you set the port too!
+         *
+         */
+        protected function setHosts( $my_hosts = [])
+        {
+
+            $dbm_elastic_hosts = @$this->config->get('dbm.dbm_elastic_hosts') ?: $my_hosts;
+             //print_r($this->config);die;
+             $this->log::info("Read in the DBM", get_class($this));
+             if (!empty($this->config->get('params.dbm'))) {
+
+                $path = $this->config->get('params.site_root') . "" . $this->config->get('sitename') . "/include/config/{$this->config->get('params.dbm')}-dbm.inc";
+                $this->log::info("Loading DBM >> config.dbm: [$path]", get_class($this));
+                if(file_exists($path)){
+
+                    $arr = require($path);
+                    $this->config->set('dbm', $arr);
+                    $this->log::info("DBM index: [{$this->config->get('dbm.dbm_index')}]", get_class($this));
+
+                }else{
+
+                    $this->log::error("Failed to load DBM [{$this->config->get('params.dbm')}]. Please check.", get_class($this));
+                    return;
+                }
+
+            } else {
+
+                $this->log::error("No DBM! You must set '&DBM=siteName-indexName'", get_class($this));
+                return;
+
+            }
+
+            //print_r($this->config);die;
+
+            $this->log::info("setHosts()", get_class($this));
+            //$ecc = print_r($this->config->get('params.elastic_client_config'), true);  //$this->log::info("gak: [$ecc]", get_class($this));
+            
+            // N.B. this is the Server default and can be set initially in php.server.defaults::$params['elastic_client_config']
+            if(!empty($this->config->get('params.elastic_client_config')) ){
+                $this->log::info("..loading elastic_client_config (from php.server.defaults).", get_class($this));
+                $client_config = $this->config->get('params.elastic_client_config');
+            }else{
+                $client_config = [];
+            }
+            //$x = print_r($client_config, true); echo "<!-- 1: $x -->\r\n";
+            // always override the server.default hosts with the specific dbm hosts
+            if(!empty($dbm_elastic_hosts)){
+                
+                $string = implode('|', $dbm_elastic_hosts);
+                $this->log::info("..setting dbm_elastic_hosts (from DBM) [$string]", get_class($this));
+                $client_config['hosts'] = $dbm_elastic_hosts;
+            }
+            
+            // if still empty try the local server
+            if(empty($client_config['hosts'])){
+
+                $client_config['hosts'] = [
+                    '127.0.0.1', // fallback
+                    $this->config->get('params.this_server_ip'),    // \Config::setServerIP() [N.B.VPN may make LOCAL_ADDR inaccurate]
+                ];
+                $string = implode('|', $client_config['hosts']);
+                $this->log::info("..setting fallback hosts [$string]", get_class($this));
+                
+            }
+            
+            // Clean up hosts from Server Defaults & DBM etc.
+            $this->check_hosts_port($client_config);
+            
+            // Sniff for available nodes before doing the search. Default: 'dbm_sniff_hosts' = 'on'
+            $sniff = @$this->config->get('params.sniff_hosts') ?: 'on';
+            if(!empty($this->config->get('dbm.dbm_sniff_hosts') )){
+                $sniff = $this->config->get('dbm.dbm_sniff_hosts') ;
+            }
+            if($sniff === 'on'){
+                $this->check_hosts_avail($client_config); 
+            }
+            
+            // Elastic v8.2.2 seems to require the port whereas previous versions did not!
+            $this->check_hosts_port($client_config);
+   
+            if( !empty($client_config['hosts']) ){
+
+                $hosts_string = implode('|', $client_config['hosts']);
+                $this->log::info("Using available hosts: [$hosts_string]", get_class($this));
+                //print_r($client_config);
+                //print_r($this->config->get('dbm'));
+
+            } else {
+
+                $this->log::error("Unable to set Elastic hosts.", get_class($this));
+
+            }
+
+            if( !empty($this->config->get('dbm.dbm_elastic_cloud')) ){
+
+                if( !empty( $this->config->get('dbm.dbm_elastic_cloud.elasticCloudId') )){
+                $client_config['elasticCloudId'] = $this->config->get('dbm.dbm_elastic_cloud.elasticCloudId');
+                }
+               
+                $client_config['basicAuthentication'] = [
+                    $this->config->get('dbm.dbm_elastic_cloud.username'),
+                    $this->config->get('dbm.dbm_elastic_cloud.password')
+                ];
+
+            }
+            
+            $this->config->set('params.active_elastic_config', $client_config);
+            $this->config->set('params.active_elastic_host', reset($client_config['hosts']));
+           
+        }
+
+        public function get_hosts($dbm_elastic_hosts=[])
+        {
+
+            $this->setHosts($dbm_elastic_hosts);
+            $ret = [
+                'active_host' => $this->config->get('params.active_elastic_host'),
+                'active_config' => $this->config->get('params.active_elastic_config'),
+                'active_version' => $this->config->get('params.elastic_version')
+            ];
+
+            return $ret;
+
+        }
+
+        /**
+         * @param $hosts - checks cluster for available hosts and removes any that are 'down'
+         * @return void
+         */
+        protected function check_hosts_avail(&$cfg)
+        {
+            
+			$auth = '';
+            $hosts = $cfg['hosts'];
+			$avail_hosts = array();
+            
+            $this->log::info("Starting sniffer", get_class($this));
+            if( !empty($this->config->get('params.elastic_client_config.basicAuthentication')) ){
+                $auth = ( implode(':', $this->config->get('params.elastic_client_config.basicAuthentication')) );
+                //$this->log::info("..using credentials: [$auth]", get_class($this));
+            }
+
+            foreach($hosts as $h){
+            
+                $arr = parse_url($h);
+                $prot = @$arr['scheme'] ?: @$this->config->get('params.default_protocol') ?: "http";
+                $host = @$arr['host'] ?: @$arr['path'] ?: '';
+                $port = @$arr['port'] ?: 9200;
+                
+                if(!empty($auth)){
+                    $rurl = "$prot://$auth@$host:$port/_nodes/_all/http";	
+                } else {
+                    $rurl = "$prot://$host:$port/_nodes/_all/http";	
+                }
+                
+                $this->log::info("..sniffing host availability: [$rurl]", get_class($this));
+				$connect_timeout = @$this->config->get('dbm.dbm_connect_timeout') ?: 250;
+				$timeout = @$this->config->get('dbm.dbm_timeout') ?: 250;
+                $options = [ 'connect_timeout' => $connect_timeout, 'timeout' => $timeout ]; // in milliseconds
+				$json = hf::get_rest($rurl, '', $options);	
+                $this->log::info("..sniffer done. ct[$connect_timeout] t[$timeout]", get_class($this));
+                //echo "<!-- Adapter: [$json] -->\r\n";
+                if(!empty($json)){
+                    
+                    $data = json_decode($json, true);
+                    if( isset($data['errordetails']['get_rest']) ){ 
+                        $string = implode('|',$data['errordetails'] );
+                        $this->log::info("..sniffer failed to reach host:[$h] [$string]", get_class($this));
+                        continue; 
+                    }
+					$avail_hosts = Arr::searchKeys($data, 'host');
+                   
+					foreach($avail_hosts as $idx=>$avail_host){
+					
+						$avail_hosts[$idx] = "$prot://$avail_host:$port";
+						
+					}
+                    
+                    $cfg['hosts'] = Arr::reOrder($avail_hosts, $hosts);
+                    $string = implode('|', $cfg['hosts']);
+                    $this->log::info("..sniffer found available hosts: [$string]", get_class($this));
+                    $this->config->set('params.elastic_version',  @Arr::searchKeys($data, 'version')[0] ?: 'Unknown');
+                    $this->log::info("..sniffer found elastic version: [{$this->config->get('params.elastic_version')}]", get_class($this));
+                    return;
+            
+                } else {
+
+                    $this->log::info("..sniffer could not reach host: [$h]", get_class($this));
+
+                }
+                
+            }
+
+            $this->log::error("..sniffer could not find any hosts!", get_class($this));
+            
+        }
+
+        /**
+         * @param $client_config - adds default port to host entries if not already supplied
+         * @return void
+         */
+        protected function check_hosts_port(&$cfg){
+
+            $hosts = $cfg['hosts'];
+            $avail = array();
+
+            foreach($hosts as $h){
+
+                $arr = parse_url($h);
+                // Send in the protocol - set it in the DBM - last resort http (most of our servers)
+                $prot = @$arr['scheme'] ?: @$this->config->get('params.default_protocol') ?: "http"; // i.e. specify or it will default to this
+               
+                $this->config->set('params.default_protocol', $prot);  // ideally save what was sent in via DBM
+                $host = @$arr['host'] ?: @$arr['path'] ?: '';
+                $port = @$arr['port'] ?: 9200;
+                if(empty($host)){
+                    $this->log::error("Unable to parse host string: [$h]", get_class($this));
+                }else{
+                     $avail[] = "$prot://$host:$port";
+                }
+               
+
+            }
+
+            $cfg['hosts'] = $avail;
 
         }
 

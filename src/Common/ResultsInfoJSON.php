@@ -14,12 +14,7 @@
             }
 
             $this->output_array['resultsetinformation'] = $this->getResultsInfo();
-            if(method_exists($this->data, 'asArray')){
-                $this->output_array += $this->data->asArray();
-            }else{
                 $this->output_array += $this->data;
-            }
-
             $json = json_encode($this->output_array, JSON_PRETTY_PRINT);
 
             return $json;
