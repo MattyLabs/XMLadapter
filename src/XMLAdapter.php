@@ -318,20 +318,36 @@
 
         //check for REST API error (response not proper JSON)
             if(hf::json_error($explain)){
-                $this->log::info("Error Search: $explain", get_class($this));
+                $this->log::info("Error JSON: $explain", get_class($this));
+                $this->logQueryDetails($query, 'Search Query');
                 return;
             }
                 
+        // check for Elastic Search error
+            if(Arr::val($results, 'status') >= 400  ){
+                //$x = print_r($results, true) ; echo "<!-- grr $x -->\r\n"; 
+                $reason = Arr::val($results, 'reason');
+                $this->log::error("Error Elastic: [" . json_encode($results, JSON_PRETTY_PRINT) ."]", get_class($this));
+                $this->logQueryDetails($query, 'Search query');
+                return; // ToDo: return XML Error message
+               
+            }
+               
         // check for CURL error (url wrong or timed out)
-            if( @$results['errordetails']['error_rest'] == true){
-                $this->log::info("Error CURL: ({$results['errordetails']['errorcode']}) {$results['errordetails']['errormessage']} ", get_class($this));
+            if(Arr::val($results, 'error_rest') == true){
+                $this->log::info("Error CURL: (". json_encode($results, JSON_PRETTY_PRINT) . ")", get_class($this));
+                $this->logQueryDetails($query, 'Search Query');
                 return;
             }
 
+       
+        // Hopefully good to go
             if( isset($results['hits']['total']['value']) ){
                 $docs = $results['hits']['total']['value'];
-            }else{
+            }elseif( isset($results['hits']['total']) ){
                 $docs = $results['hits']['total'];
+            }else{
+                $docs = 0;
             }
 
             $this->log::info("..search query completed. Docs found [$docs]");
