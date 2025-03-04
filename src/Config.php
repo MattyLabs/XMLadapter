@@ -106,7 +106,7 @@
             $this->log =  new Logger\SimpleLogger();
             /* VERSION: 3.~ Client free 2.~ for PHP v7+ 1.~ for PHP v5.6+. */
             /* - v3.0.0 - version friendly without officail Elastic client  */
-            $this->log::info("Initialising Config: [XMLAdapter v3.0.0]", get_class($this));
+            $this->log::info("Initialising Config: [XMLAdapter v3.0.2]", get_class($this));
 
         // Load $params
             if($params){
@@ -182,6 +182,8 @@
             }else{
                 $script_filename = '';
             }
+
+            self::set('params.script_filename', $script_filename);
 
             if(!empty($script_filename)){
 

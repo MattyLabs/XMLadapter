@@ -398,11 +398,10 @@
          *  v8.2 seems to require you set the port too!
          *
          */
-        protected function setHosts( $my_hosts = [])
+        protected function setHosts()
         {
 
-            $dbm_elastic_hosts = @$this->config->get('dbm.dbm_elastic_hosts') ?: $my_hosts;
-             //print_r($this->config);die;
+            //print_r($this->config);//die;
              $this->log::info("Read in the DBM", get_class($this));
              if (!empty($this->config->get('params.dbm'))) {
 
@@ -437,15 +436,18 @@
                 $this->log::info("..loading elastic_client_config (from php.server.defaults).", get_class($this));
                 $client_config = $this->config->get('params.elastic_client_config');
             }else{
-                $client_config = [];
+                $client_config = [
+                    'hosts' => []
+                ];
             }
+        
             //$x = print_r($client_config, true); echo "<!-- 1: $x -->\r\n";
             // always override the server.default hosts with the specific dbm hosts
-            if(!empty($dbm_elastic_hosts)){
+            if(!empty( $this->config->get('dbm.dbm_elastic_hosts'))){
                 
-                $string = implode('|', $dbm_elastic_hosts);
+                $string = implode('|', $this->config->get('dbm.dbm_elastic_hosts'));
                 $this->log::info("..setting dbm_elastic_hosts (from DBM) [$string]", get_class($this));
-                $client_config['hosts'] = $dbm_elastic_hosts;
+                $client_config['hosts'] = $this->config->get('dbm.dbm_elastic_hosts');
             }
             
             // if still empty try the local server
@@ -506,10 +508,11 @@
            
         }
 
-        public function get_hosts($dbm_elastic_hosts=[])
+        public function get_hosts()
         {
 
-            $this->setHosts($dbm_elastic_hosts);
+            $this->setHosts();
+            
             $ret = [
                 'active_host' => $this->config->get('params.active_elastic_host'),
                 'active_config' => $this->config->get('params.active_elastic_config'),
@@ -560,7 +563,8 @@
                 if(!empty($json)){
                     
                     $data = json_decode($json, true);
-                    if( isset($data['errordetails']['get_rest']) ){ 
+
+                    if( isset($data['errordetails']['error_rest']) ){ 
                         $string = implode('|',$data['errordetails'] );
                         $this->log::info("..sniffer failed to reach host:[$h] [$string]", get_class($this));
                         continue; 
