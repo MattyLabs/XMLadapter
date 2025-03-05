@@ -920,8 +920,8 @@
                 !empty($this->query_params['k']) or
                 !empty($this->query_params['isb']) or
                 preg_match('/identifier/', $this->query_params['search_fields']) or
-                preg_match('/ref_no/', $this->query_params['search_fields']) or
-                preg_match('/978\d{10}/', $this->query_params['search_terms'])
+                preg_match('/ref_no/', $this->query_params['search_fields']) //or
+                //preg_match('/978\d{10}/', $this->query_params['search_terms'])
             ){
                 return true;
             } else {
