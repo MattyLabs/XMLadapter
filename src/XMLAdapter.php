@@ -324,7 +324,7 @@
             }
                 
         // check for Elastic Search error
-            if(Arr::val($results, 'status') >= 400  ){
+            if( preg_match("/^4\d\d/", Arr::val($results, 'status')) ){
                 //$x = print_r($results, true) ; echo "<!-- grr $x -->\r\n"; 
                 $reason = Arr::val($results, 'reason');
                 $this->log::error("Error Elastic: [" . json_encode($results, JSON_PRETTY_PRINT) ."]", get_class($this));
