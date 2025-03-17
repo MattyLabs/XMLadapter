@@ -1,0 +1,26 @@
+{
+	"config": {
+        "optimize-autoloader": true,
+        "classmap-authoritative": true,
+        "preferred-install": {
+            "*": "dist"
+        },
+        "sort-packages": true,
+        "secure-http": false,
+        "platform": {
+             "php": "8.3.12"
+		}
+     },
+        
+    "repositories": [
+        {
+            "url": "https://github.com/MattyLabs/XMLadapter",
+            "type": "vcs"
+            
+        }
+    ],
+    "require": {
+		"curl/curl": "^2.0",
+		"mattylabs/xmladapter": "^3.0.0"
+	}
+}

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<record>
+  <auth_title>CHANNAVEERCYBERSECUR</auth_title>
+  <author_bio><![CDATA[Bindu Channaveerappa is a Business Analysis Consultant and Director at I-Perceptions Consulting Limited, where she provides business analysis services. She has also co-authored the IIBA&#39;s Cybersecurity Certification (CCA) and contributed to the IIBA&#39;s exam questions and several digital assets. Bindu is the Regional Director for IIBA EMEA and is the immediate past Director of the UK chapter. She frequently speaks at conferences globally on Business Analysis and Cyber Security.]]></author_bio>
+  <barcode>9781780176147</barcode>
+  <bic_subj_code>KJ</bic_subj_code>
+  <bic_subj_code>UR</bic_subj_code>
+  <bic_subject>Business &amp; management|Computer security</bic_subject>
+  <bic_tree>K;J</bic_tree>
+  <contents><![CDATA[<ol><li>The trusted advisor - why business analysis? </li>&#10;<li>Is this for real - why cybersecurity?</li>&#10;<li>Your awakening journey starts here - shift in security mindset - developing security perspective</li>&#10;<li>Where is the trap? - risk analysis and threat modelling</li>&#10;<li>The common sense - components of business analysis</li>&#10;<li>When you pick up one end of the stick, you also pick up the other - project delivery phases</li>&#10;<li>Venetian masquerades - people, personas, use cases and misuse cases </li>&#10;<li>Securing the flows - process security</li>&#10;<li>Securing the crown jewels - data (apps, ui, systems, database, cloud, network security and compliance requirements, e.g., data privacy and compliance) </li>&#10;<li>The fight club - security business case</li>&#10;</ol>]]></contents>
+  <contributor>Channaveerappa, Bindu,author.</contributor>
+  <ctitle>Cyber security and business analysis</ctitle>
+  <date_created>20250306</date_created>
+  <date_created_by>WEST10_BDS_DBBOOK_EHAUS_20240215_6.xml</date_created_by>
+  <date_created_file>user_file_not_set</date_created_file>
+  <date_created_user>user_name_not_set</date_created_user>
+  <date_created_user_company>user_company_not_set</date_created_user_company>
+  <date_created_user_company_code>USERCOMPANYNOTSET</date_created_user_company_code>
+  <date_updated>20250130 17:12:50</date_updated>
+  <date_updated_by>WEST10_BDS_DBBOOK_EHAUS_20250130_4.xml</date_updated_by>
+  <descrip><![CDATA[The imperative of cyber security has never been more pronounced and organisations must remain proactive, anticipating potential risks and evolving their strategies in response.]]></descrip>
+  <description><![CDATA[<p><strong>The imperative of cyber security has never been more pronounced and organisations must remain proactive, anticipating potential risks and evolving their strategies in response. </strong></p>&#10;<p><em>Cyber Security and Business Analysis</em> provides the necessary techniques, tools and framework to help business analysts include cyber security holistically in their approach, equipping them with the required knowledge to recognise risks at all levels and deliver a complete analysis. The versatile framework this book provides can be deployed adaptively, either as tailored individual components or as a whole to support the construction of secure and resilient systems.</p>&#10;<p>Enriched with accessible real-life experiences, security incidents and analogies, the content goes beneath the surface to provide a deeper understanding. Woven with the collective wisdom of business analysis and cyber security, this book forms a holistic guide for shaping secure, resilient and robust systems. </p>&#10;<p>If you want to protect your organisation from cyber threats and deliver tangible results, this book is an indispensable guide that will equip you with all you need to succeed.</p>]]></description>
+  <dewey>658.478 (edition:23)</dewey>
+  <dewey_num>6584780000</dewey_num>
+  <distributor>Ingram Publisher Services|Epitome Books</distributor>
+  <distributor_code>IGPS</distributor_code>
+  <distributor_code>NULL</distributor_code>
+  <facet>DBEBK</facet>
+  <facet>LIB</facet>
+  <facet>ANE</facet>
+  <filename>D:/data/book/03514/BDZ0054763514.xml</filename>
+  <format>Digital download</format>
+  <format_code>ED</format_code>
+  <format_type>EBOOK</format_type>
+  <identifier>1780176147</identifier>
+  <identifier>9781780176147</identifier>
+  <identifier>BDZ0054763514</identifier>
+  <imprint>BCS</imprint>
+  <imprint_exact>BCS</imprint_exact>
+  <isbn_10>1780176147</isbn_10>
+  <jacket_l>www.bibdsl.co.uk/bds-images/l/978178/9781780176147.jpg</jacket_l>
+  <jacket_m>www.bibdsl.co.uk/bds-images/m/978178/9781780176147.jpg</jacket_m>
+  <jacket_s>www.bibdsl.co.uk/bds-images/s/978178/9781780176147.jpg</jacket_s>
+  <jacket_ud>14/02/2024</jacket_ud>
+  <kword_index>Cyber security and business analysis|1780176147|9781780176147|BDZ0054763514|Channaveerappa, Bindu,author.</kword_index>
+  <language_text>English</language_text>
+  <language_text_code>ENG</language_text_code>
+  <lc_class>HF5548.37</lc_class>
+  <lc_head>Computer security.|Business intelligence.</lc_head>
+  <lib_qual_code>LIB</lib_qual_code>
+  <lib_reader_code>AN</lib_reader_code>
+  <lib_reader_code>ANE</lib_reader_code>
+  <name_exact>CHANNAVEERAPPABINDUAUTHOR</name_exact>
+  <nof_pages>156</nof_pages>
+  <primary_avail>202424</primary_avail>
+  <primary_name>Bindu Channaveerappa</primary_name>
+  <primary_price>E_20 to _30</primary_price>
+  <publ_country>United Kingdom</publ_country>
+  <publ_place>London</publ_place>
+  <rda_flag>Y</rda_flag>
+  <readership>Professional and scholarly</readership>
+  <readership_code>H</readership_code>
+  <ref_no>9781780176147</ref_no>
+  <related_editions>9781780176154|9781780176130|9781780176154|9781780175959|9781780175102|9781780175690|9781780174242|9781780174686</related_editions>
+  <responsibility>Bindu Channaveerappa.</responsibility>
+  <sort_alpha>CHANNAVEERAPPABINDUCYBERSECURITYANDBUSINESSANALYSIS</sort_alpha>
+  <sort_date>20240612</sort_date>
+  <sort_month>202406</sort_month>
+  <sort_name>CHANNAVEERAPPABINDU</sort_name>
+  <sort_series>ZZZZZZZZCYBERSECURITYANDBUSINESSANALYSIS</sort_series>
+  <sort_title>CYBERSECURITYANDBUSINESSANALYSIS</sort_title>
+  <sub_title>an essential guide to secure and robust systems</sub_title>
+  <suggest_terms>Channaveerappa Bindu</suggest_terms>
+  <suggest_terms>Cyber security and business analysis</suggest_terms>
+  <thema_subj_code>U</thema_subj_code>
+  <thema_subj_code>KJC</thema_subj_code>
+  <thema_subj_code>UY</thema_subj_code>
+  <thema_subject>Computing &amp; information technology|Business strategy|Computer science</thema_subject>
+  <thema_tree>U</thema_tree>
+  <title_exact>CYBERSECURITYANDBUSINESSANALYSIS</title_exact>
+  <title_index>Cyber security and business analysis|an essential guide to secure and robust systems</title_index>
+  <uk_avail>Available</uk_avail>
+  <uk_avail_code>20</uk_avail_code>
+  <uk_exvat_price>26.99</uk_exvat_price>
+  <uk_pubdate>12th Jun 2024</uk_pubdate>
+  <uk_vat_price>26.99</uk_vat_price>
+  <ukslc>True Crime</ukslc>
+  <ukslc_code>CRI</ukslc_code>
+  <wco>BDS</wco>
+</record>

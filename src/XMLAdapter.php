@@ -421,10 +421,11 @@
              $this->log::info("Read in the DBM", get_class($this));
              if (!empty($this->config->get('params.dbm'))) {
 
-                $path = $this->config->get('params.site_root') . "" . $this->config->get('sitename') . "/include/config/{$this->config->get('params.dbm')}-dbm.inc";
-                $this->log::info("Loading DBM >> config.dbm: [$path]", get_class($this));
+                $path = $this->config->get('params.site_root') . "/include/config/{$this->config->get('params.dbm')}-dbm.inc";
+               
                 if(file_exists($path)){
 
+                    $this->log::info("Loading DBM >> Config::params.dbm: [$path]", get_class($this));
                     $arr = require($path);
                     $this->config->set('dbm', $arr);
                     $this->log::info("DBM index: [{$this->config->get('dbm.dbm_index')}]", get_class($this));

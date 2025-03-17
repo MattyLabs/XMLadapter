@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<record>
+  <auth_title>PESCEMARKGETTINGSTA</auth_title>
+  <author_bio><![CDATA[Mark Pesce co-invented the Virtual Reality Modeling Language (VRML), bringing 3D to the Web and laying the foundations for today's metaverse. He has written nine books, including Augmented Reality: Unboxing Tech's Next Big Thing, was for seven years a judge on the ABC&#39;s The New Inventors, founded postgraduate programs in emerging media at USC and the Australian Film Television and Radio School, and holds an honorary appointment in the Digital Cultures Program at Sydney University. He writes a multiple-award-winning column for The Register, pens another for COSMOS Magazine, and is professional futurist and public speaker based in Sydney. Details at www.markpesce.com/bio]]></author_bio>
+  <barcode>9781780176444</barcode>
+  <bic_subj_code>U</bic_subj_code>
+  <bic_subj_code>UYQ</bic_subj_code>
+  <bic_subject>Computing &amp; information technology|Artificial intelligence</bic_subject>
+  <bic_tree>U</bic_tree>
+  <contents><![CDATA[Introduction&#10;1. Getting Started&#10;2. How AI Chatbots Work&#10;3. Security and Privacy&#10;4. Simple Prompts&#10;5. Reasoning and Summarising&#10;6. Truthiness and Chatbots&#10;7. Character, Context and Conflict&#10;8. Using Character, Context and Challenge to Craft Powerful Prompts&#10;9. Chain of Thought Prompts&#10;10. Computer Says No&#10;11. Creating Images with Bing Chat&#10;12. Windows Copilot&#10;13. Autonomous Agents&#10;14. Will and AI Chatbot Take My Job&#10;15. What the Future Holds / Next Steps]]></contents>
+  <contributor>Pesce, Mark,author,narrator.</contributor>
+  <contributor>BCS, The Chartered Institute for IT,issuing body.</contributor>
+  <ctitle>Getting started with ChatGPT and AI chatbots</ctitle>
+  <date_created>20250306</date_created>
+  <date_created_by>WEST10_BDS_DBBOOK_EHAUS_20240719_5.xml</date_created_by>
+  <date_created_file>user_file_not_set</date_created_file>
+  <date_created_user>user_name_not_set</date_created_user>
+  <date_created_user_company>user_company_not_set</date_created_user_company>
+  <date_created_user_company_code>USERCOMPANYNOTSET</date_created_user_company_code>
+  <date_updated>20250130 17:12:50</date_updated>
+  <date_updated_by>WEST10_BDS_DBBOOK_EHAUS_20250130_4.xml</date_updated_by>
+  <descrip><![CDATA['Getting Started with ChatGPT and AI Chatbots' explores the 'big three' AI chatbots - OpenAI ChatGPT, Microsoft Bing Chat / Windows Copilot and Google Bard - demystifying their operation, and providing a wealth of tools for thinking about how to talk to these smart tools.]]></descrip>
+  <description><![CDATA[<p><strong>Learn how to use ChatGPT, Bing Chat / Copilot, and Gemini (Bard) to get the most out of these powerful tools</strong>.</p>&#10;<p>ChatGPT has become a tool hundreds of millions use every day - yet few have mastered the art of sweet-talking these new AI chatbots into providing detailed and accurate responses to user prompts. It&#39;s vital for every professional tech user to have an understanding of how AI chatbots work, and how best to put them to work.</p>&#10;<p>While the fear is that AI will take people's jobs, it is more likely to be someone using AI that will!</p>&#10;<p><em>Getting Started with ChatGPT and AI Chatbots</em> explores the 'big three' AI chatbots - OpenAI ChatGPT, Microsoft / Windows Copilot and Google Gemini (Bard) - demystifying their operation, and providing a wealth of tools for thinking about how to talk to these smart tools.</p>&#10;<p>Whether you&#39;re a business user, a tech student, or a curious professional, this book is for you to understand and demystify Large Language Models (LLMs) and generative AI tools, harnessing them to enhance your role.</p>]]></description>
+  <dewey>006.35 (edition:23)</dewey>
+  <dewey_num>0063500000</dewey_num>
+  <distributor>Ingram Publisher Services</distributor>
+  <distributor_code>IGPS</distributor_code>
+  <edition>Unabridged</edition>
+  <facet>DBBOOK</facet>
+  <facet>LIB</facet>
+  <facet>ANH</facet>
+  <filename>D:/data/book/09097/BDZ0055579097.xml</filename>
+  <format>Downloadable audio file</format>
+  <format_code>AJ</format_code>
+  <format_type>AUDIO</format_type>
+  <identifier>1780176449</identifier>
+  <identifier>9781780176444</identifier>
+  <identifier>BDZ0055579097</identifier>
+  <illus>digital, MP3 file.</illus>
+  <imprint>BCS</imprint>
+  <imprint_exact>BCS</imprint_exact>
+  <isbn_10>1780176449</isbn_10>
+  <jacket_l>www.bibdsl.co.uk/bds-images/l/978178/9781780176444.jpg</jacket_l>
+  <jacket_m>www.bibdsl.co.uk/bds-images/m/978178/9781780176444.jpg</jacket_m>
+  <jacket_s>www.bibdsl.co.uk/bds-images/s/978178/9781780176444.jpg</jacket_s>
+  <jacket_ud>16/07/2024</jacket_ud>
+  <kword_index>BCS user guides|Getting started with ChatGPT and AI chatbots|1780176449|9781780176444|BDZ0055579097|Pesce, Mark,author,narrator.|BCS, The Chartered Institute for IT,issuing body.</kword_index>
+  <language_text>English</language_text>
+  <language_text_code>ENG</language_text_code>
+  <lc_class>QA76.76.C52</lc_class>
+  <lc_head>Chatbots.</lc_head>
+  <lib_qual_code>LIB</lib_qual_code>
+  <lib_reader_code>AN</lib_reader_code>
+  <lib_reader_code>ANH</lib_reader_code>
+  <name_exact>PESCEMARKAUTHORNARRATOR</name_exact>
+  <name_exact>BCSTHECHARTEREDINSTITUTEFORITISSUINGBODY</name_exact>
+  <primary_avail>202431</primary_avail>
+  <primary_name>Mark Pesce</primary_name>
+  <primary_price>C_10 to _15</primary_price>
+  <publ_country>United Kingdom</publ_country>
+  <publ_place>London</publ_place>
+  <rda_flag>Y</rda_flag>
+  <readership>Professional and scholarly</readership>
+  <readership_code>H</readership_code>
+  <ref_no>9781780176444</ref_no>
+  <related_editions>9781780176413|9781780176420|9781780176413|9781780176420|9781780176437|9781780175829|9781780175287|9781780175768|9781780176482|9781780176529|9781780176499|9781780176451</related_editions>
+  <responsibility>Mark Pesce.</responsibility>
+  <review><![CDATA[In this ever so timely book, one of my favourite technologists Mark Pesce, takes us through and behind the screen to explain how the latest generation of AI chatbots actually work. But this is not a book about chatbots, this is a book about how to use AI-powered chatbots in daily life, and how to use them to their fullest potential.<br /><i>Genevieve Bell, The Australian National University</i><br /><br />This book is a must-read for anyone considering using generative AI in business. Authored in non-technical language, it walks through the origins of the first chatbot into the current generative AI landscape including ChatGPT, Copilot and Bard. Furthermore, the guidance on effective prompting to achieve the right results, and a list of critical dos and don&#39;ts to protect sensitive data really make this an all-round winner. Top marks BCS, highly recommended!<br /><i>Pauline Norstrom, Founder and CEO, Anekanta&#174; Consulting and Anekanta&#174; AI</i><br /><br />This book provides practical guidance on the use of a rapidly growing technologies referred to as AI chatbots, that offer a substantial productivity advantage to those adept at crafting precise prompts and understanding their diverse applications. It is a valuable resource for mastering these emerging tools, ensuring not only competitiveness but also enabling a focus on the creative and compelling facets of one&#39;s work. I highly recommend everyone to read this book and glean insights on wielding this potent power proficiently to remain competent.<br /><i>Rashik Parmar MBE FBCS, Group CEO, BCS, The Chartered Institute for IT</i><br /><br />In late November 2022, ChatGPT introduced a major advance in Artificial Intelligence that surprised almost everyone, including many experts in AI. Trained on text from billions of books and webpages, it can thoughtfully answer questions on a huge variety of topics and languages. The increase in our capability to access human knowledge is analogous to the increase provided by the internet in 1993. For both technologies, getting good answers requires knowing how to ask the right questions. In this timely and important book, Mark Pesce, who has been at the forefront of new digital technologies for over 30 years, provides a compelling and comprehensive introduction to ChatGPT and how to use it.<br /><i>Professor Ken Goldberg, William S. Floyd Jr. Distinguished Chair in Engineering, UC Berkeley</i><br /><br />Everything you need to educate yourself and your colleagues about the latest hot topic is found within these pages, it's a must share for colleagues to stimulate conversations about how your business can best adopt AI safely and where you will find business cases. From useful tips on prompts to security concerns about data, biases, and hallucinations with comparisons, get the facts you need on AI here. These are exactly the kinds of conversations I'm having two or three times a day, helping organisations bring their AI aspirations in line with what their business needs are.<br /><i>David Starkings, AI Adoption Consultant, tts digital adoption solutions</i><br /><br />Getting Started with ChatGPT and AI Chatbots is perfectly targeted to give an introduction to ChatGPT and AI Chatbots, it compares and contrasts a range of the major options and covers how each of the competing Chatbots can answer the same question very differently. It also poses some interesting thoughts around 'Prompt Engineering' and how this may become a whole new skillset that people need to learn. I thought that Chapter 6 brought insight to 'hallucinations' and how AI chatbots have the ability to sound very confident, even when they are wrong, the importance of fact checking and using human experts is stressed well.<br /><i>Richard Parker MBCS, Chair, AELP Sector Forum, IT & Digital</i><br /><br />Mark&#39;s book is a practical and pragmatic guide to contemporary spellcasting - the magic needed to evoke useful, safe and factual results from the emerging field of large language models. Importantly the book provides the framework needed to evaluate LLM&#39;s critically and ground them in reality - a must-have resource for explorers in this field.<br /><i>Bhautik Joshi, Principal Applied Scientist, Canva</i><br /><br />Everybody is talking about AI, and soon it will be integrated into every part of our electronic devices - always on and always available. Getting Started with ChatGPT and AI Chatbots explains in an easy-to-understand way how AI works and how to get the best results from it, safely and securely.<br /><i>David Smith MBCS MIET, Lead Business Analyst, Lloyds Banking Group</i>]]></review>
+  <series>BCS user guides</series>
+  <series_exact>BCSUSERGUIDES</series_exact>
+  <sort_alpha>PESCEMARKGETTINGSTARTEDWITHCHATGPTANDAICHATBOTS</sort_alpha>
+  <sort_date>20240801</sort_date>
+  <sort_month>202408</sort_month>
+  <sort_name>PESCEMARK</sort_name>
+  <sort_series>BCSUSERGUIDESGETTINGSTARTEDWITHCHATGPTANDAICHATBOTS</sort_series>
+  <sort_title>GETTINGSTARTEDWITHCHATGPTANDAICHATBOTS</sort_title>
+  <sub_title>an introduction to generative AI tools</sub_title>
+  <suggest_terms>Pesce Mark</suggest_terms>
+  <suggest_terms>Getting started with ChatGPT and AI chatbots</suggest_terms>
+  <thema_subj_code>U</thema_subj_code>
+  <thema_subj_code>UYQL</thema_subj_code>
+  <thema_subject>Computing &amp; information technology|Natural language &amp; machine translation</thema_subject>
+  <thema_tree>U</thema_tree>
+  <title_exact>GETTINGSTARTEDWITHCHATGPTANDAICHATBOTS</title_exact>
+  <title_index>BCS user guides|Getting started with ChatGPT and AI chatbots|an introduction to generative AI tools</title_index>
+  <uk_avail>Available</uk_avail>
+  <uk_avail_code>20</uk_avail_code>
+  <uk_exvat_price>12.49</uk_exvat_price>
+  <uk_pubdate>1st Aug 2024</uk_pubdate>
+  <uk_vat_price>14.99</uk_vat_price>
+  <uk_vat_rate>S</uk_vat_rate>
+  <ukslc>Computers and IT</ukslc>
+  <ukslc_code>COM</ukslc_code>
+  <wco>BDS</wco>
+</record>
