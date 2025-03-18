@@ -190,11 +190,14 @@
                     Arr::del($query, "body.track_total_hits");
                 }
 
-                if( !empty($query['suggest']) ){
-                    if (Arr::searchKeys($query['suggest'], 'skip_duplicates')) {
-                        $this->log::info("Version adjustment:: deleting key skip_duplicates", get_class($this));
-                        Arr::del($query['suggest'], "skip_duplicates");
-                    }
+                if( Arr::searchKeys($query, 'suggest') ){
+                    
+					$sug_name = Arr::search($query, 'skip_duplicates')['path'];
+					Arr::del($query, $sug_name);
+					$sug_title = Arr::search($query, 'skip_duplicates')['path'];
+					Arr::del($query, $sug_title);
+                    $this->log::info("Version adjustment:: deleting key skip_duplicates", get_class($this));
+
                 }
 
 
