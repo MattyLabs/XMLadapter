@@ -105,8 +105,8 @@
         {
             $this->log =  new Logger\SimpleLogger();
             /* VERSION: 3.~ Client free 2.~ for PHP v7+ 1.~ for PHP v5.6+. */
-            /* - v3.0.7 - version friendly without official Elastic client  */
-            $this->log::info("Initialising Config: [XMLAdapter v3.0.7]", get_class($this));
+            /* - v3.0+ - version friendly without official Elastic client  */
+            $this->log::info("Initialising Config: [XMLAdapter v3.0.8]", get_class($this));
 
         // Load $params
             if($params){
@@ -159,6 +159,7 @@
             // DBM: We need this to find the DB config file
             $dbm = self::get('url.qs_array.dbm') ?: self::get('params.dbm') ?: '';
             $dbm = strtolower($dbm);
+      
             if( empty($dbm) ){
 
                 $this->log::error("Error. DBM not found.", get_class($this));
@@ -175,50 +176,37 @@
 
         // SITE ROOT: we need this to locate the site config files [php.server.defaults.php, site_ini.php and site-db-DBM.inc]
             //$script_filename = self::get('params.script_filename') ?? $_SERVER['SCRIPT_FILENAME'] ?? '';
-            if(!empty(self::get('params.script_filename'))){
-                $script_filename = self::get('params.script_filename');
-            }elseif(isset($_SERVER['SCRIPT_FILENAME'])){
-                $script_filename = strtolower($_SERVER['SCRIPT_FILENAME']);
-            }else{
-                $script_filename = '';
+
+            if(empty(self::get('params.site_root'))){
+
+                if(!empty(self::get('params.www_root'))){
+                    self::set('params.site_root', self::get('params.www_root') .'/'.self::get('params.sitename') );
+                }
+
             }
+            // ?still empty?
+            if(empty(self::get('params.site_root'))){
 
-            self::set('params.script_filename', $script_filename);
+                $root = strtolower($_SERVER['APPL_PHYSICAL_PATH']);
+                $root = str_replace( "\\", "/", $root);
+                $root = trim($root, '[\/]');
+                self::set('params.site_root', $root );
 
-            if(!empty($script_filename)){
-
-                $script_filename = str_replace( "\\", "/", $script_filename);
-                $sitename = strtolower(self::get('params.sitename'));
-                if( preg_match("/$sitename/i", $script_filename) ){
-                    $site_root = explode($sitename, $script_filename)[0] . '' . $sitename;
-                }else{
-                    $site_root = self::get('params.www_root') . "/$sitename";
-                }
-                if( empty(self::get('params.site_root')) ){
-                    self::set('params.site_root', $site_root );
-                }
-
-
-            } else {
-
-                if( file_exists(self::get('params.www_root') . "/" . strtolower(self::get('params.sitename'))) ){
-
-                    $site_root = self::get('params.www_root') . "/" . strtolower(self::get('params.sitename'));
-                    self::set('params.site_root', $site_root );
-
-                }else{
+            }
+             // ?still empty!!
+            if(empty(self::get('params.site_root'))){
 
                 $this->log::error("Error. Cannot locate script path.", get_class($this));
                 $this->throwError();
 
                 }
 
-            }
 
             if(self::get('params.htmlpurifier_purify') == true) {
                 $this->purifyQueryString( self::get('url.qs_array'));
             }
-            //print_r($this->config);die;
+
+            //print_r($this->config);//die;
         }
 
 

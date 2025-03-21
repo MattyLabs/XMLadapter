@@ -424,6 +424,11 @@
              $this->log::info("Read in the DBM", get_class($this));
              if (!empty($this->config->get('params.dbm'))) {
 
+                if(empty($this->config->get('params.site_root'))){
+                    $this->log::error("Failed to locate site_root. Please check Server.Defaults.", get_class($this));
+                    return;
+                }
+
                 $path = $this->config->get('params.site_root') . "/include/config/{$this->config->get('params.dbm')}-dbm.inc";
                
                 if(file_exists($path)){
