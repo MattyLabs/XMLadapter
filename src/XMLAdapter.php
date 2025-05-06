@@ -359,6 +359,26 @@
 
             $this->logQueryDetails($query, 'Search Query');
 
+        // MUNGE THE RESULTS:: titleCase
+            if(  !empty($this->config->get('dbm.default_titlecase_fields')) ){
+
+                foreach($this->config->get('dbm.default_titlecase_fields') as $fn){
+
+                    $t1 = Arr::search_all_keys($results, $fn);
+                    //print_r($t1);die;
+                    if( !empty($t1)){
+                        foreach($t1 as $k => $t){
+                            if( !empty($t)){
+                                Arr::set($results, $k, hf::titleCase($t));
+                            }
+                           
+                        }
+                    }
+                   
+                }
+
+            }
+
         // DISPLAY THE RESULTS
             $this->log::info("ResultsInfo - start..", get_class($this));
 

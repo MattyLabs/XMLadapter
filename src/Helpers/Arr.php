@@ -217,6 +217,47 @@
 
         }
 
+        /**
+         *  create a recursive iterator to loop over the array and find the all instances 
+         *  of the key you are looking for
+         *  returns an array of key (in dot notation) and the key's value.
+         *
+         * @param $array
+         * @param $searchKey
+         * @return array
+         */
+        public static function search_all_keys($array, $searchKey='')
+        {
+          
+            if(!is_array($array)){ return false; }
+                    
+            $outputArray = array();
+            
+            $iter = new RecursiveIteratorIterator(
+                new RecursiveArrayIterator($array),
+                RecursiveIteratorIterator::SELF_FIRST);
+    
+            //loop over the iterator
+            foreach ($iter as $key => $value) {
+                //if the key matches our search
+                if ($key === $searchKey) {
+                    //add the current key
+                    $keys = array($key);
+                    //loop up the recursive chain
+                    for($i=$iter->getDepth()-1;$i>=0;$i--){
+                        //add each parent key
+                        array_unshift($keys, $iter->getSubIterator($i)->key());
+                    }
+                    //return our output array
+                    $path = implode('.', $keys);
+                    $outputArray[$path] = $value;
+                    
+                }
+            }
+            //return false if not found
+            return $outputArray;
+        }
+                    
 
         /**
          * returns an array of values for all matching keys in array
