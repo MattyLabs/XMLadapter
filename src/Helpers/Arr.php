@@ -397,17 +397,18 @@
         {
             $arr_ordered = array();
             foreach ($order_by as $key) {
-			
-                if(in_array($key, $arr)){
-                    $arr_ordered[] = $key;
-                }
+                $key = str_replace(['http', 'https', '//', ':', '9200'], '', $key);
+                $arr_ordered += preg_grep("/$key/", $arr);
                 
             }
             
-            if(empty($arr_orderedarr)){
+            if(empty($arr_ordered)){
                 // ?Better unsorted than ruined?
+                //$x = print_r($arr, true); echo "<!-- UN-done: $x -->\r\n";
                 return $arr;
             }else{
+                $arr_ordered = array_values($arr_ordered);	// renumber index keys 
+                //$x = print_r($arr_ordered, true); echo "<!-- done: $x -->\r\n";
                 return $arr_ordered;
             }
             
