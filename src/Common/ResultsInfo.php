@@ -240,8 +240,8 @@
                     preg_match("/$type\.(.*?)\./", $key, $matches);
                     //$range_field = $matches[1] ?? '';
                     $range_field = @$matches[1] ?: '';
-                    if(preg_match("/lte/", $key)){ $lte = $value;}
-                    if(preg_match("/gte/", $key)){ $gte = $value;}
+                    if(preg_match("/lte|lt/", $key)){ $lte = $value;}
+                    if(preg_match("/gte|gt/", $key)){ $gte = $value;}
 
                 }else{
 

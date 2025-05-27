@@ -364,12 +364,12 @@
 
                 foreach($this->config->get('dbm.default_titlecase_fields') as $fn){
 
-                    $t1 = Arr::search_all_keys($results, $fn);
-                    //print_r($t1);die;
+                    $t1 = Arr::search_all_keys($results['hits']['hits'], $fn);
                     if( !empty($t1)){
                         foreach($t1 as $k => $t){
-                            if( !empty($t)){
-                                Arr::set($results, $k, hf::titleCase($t));
+                            if( !empty($t) and !is_array($t)){
+                                //echo "<!-- titleCase this: [$t] [$k] >> [" . hf::titleCase($t) . "]-->\r\n";
+                                Arr::set($results['hits']['hits'], $k, hf::titleCase($t));
                             }
                            
                         }
