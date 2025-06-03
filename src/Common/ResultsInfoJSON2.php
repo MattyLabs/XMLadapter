@@ -150,7 +150,6 @@
                     'errorcode'     => $error_code ?: '',
                     'errormessage'  => $msg ?: "Search error",
                     'documentcount' => $this->getDocumentCount(),
-                    'dbm_index'     => $this->params['dbm'],
                     'search_terms'  => $this->params['search_terms'],
                     'search_query'  => $this->params['search_query'],
                     'suggest_names' => $this->getSuggestions('suggest-name'),
