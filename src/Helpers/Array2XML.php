@@ -170,6 +170,12 @@ class Array2XML
         // we check if it has any text value, if yes, append it.
         if (!is_array($arr) and !empty($arr)) {
             $node->appendChild($xml->createTextNode(self::bool2str($arr)));
+        }elseif(!is_array($arr) && empty($arr)) {
+			// We keep the node if its a quantity set to '0'! (which == empty as well)
+			if($arr == '0'){
+            	$node->appendChild($xml->createTextNode(self::bool2str($arr)));
+			}
+        
         }
 
         return $node;

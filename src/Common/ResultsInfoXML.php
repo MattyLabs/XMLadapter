@@ -149,7 +149,6 @@
 
 
         private function throwError($msg, $error_code){
-//print_r($this->params);//die;
 
             $error_array = [
                 'errordetails' => [
