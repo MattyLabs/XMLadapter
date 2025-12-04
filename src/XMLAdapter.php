@@ -220,7 +220,7 @@
         // MOQ: getMyOwnQuery() - completely replaces the 'body.query'
             if (!empty($this->query->getMyOwnQuery())) {
 
-                Arr::set($query, 'body', $this->query->getMyOwnQuery());
+                Arr::set($query, 'body.query', $this->query->getMyOwnQuery()['query']);
 
             }
 
