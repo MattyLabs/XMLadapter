@@ -1602,15 +1602,13 @@
 				$this->log::info("VectorQuery overwrites body.query (NLP)", get_class($this));
                 $search_vector = $this->query_params['nlp'];
 				$search_vector = json_decode($search_vector, true);
-				if(!empty($this->query_params['field_list'])){
-					$fields = explode(',', $this->query_params['field_list']);
-				}else{
-					$fields = '*';
-				}
 				
 				$vector_query = [
-					"_source" => false,
-					"fields" => $fields,
+					'_source' => [
+                        'includes' => $this->query_params['field_list_array'],
+						'excludes' => $this->query_params['excludes_field_list'],
+                    ],
+					//"fields" => $fields,
 					"retriever" => [
 						"knn" => [
 							"field" => "{$search_vector['field']}",

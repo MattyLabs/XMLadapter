@@ -59,10 +59,9 @@
 
                 $source = []; $add = [];
 		
-				if(empty($record['_source'])){
-					$record['_source'] = $record['fields'];
+				if(!empty($record['_source'])){	
+					ksort($record['_source']);
 				}
-                ksort($record['_source']);
 				
 			// elastic cloud uses "_id" and we use ref_no
 				if( empty($record['_source']['ref_no']) ){
