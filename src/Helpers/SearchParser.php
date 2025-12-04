@@ -898,11 +898,6 @@
 
             }
 
-            // make sure we have ref_no
-            if( !in_array('ref_no', $field_list) && !in_array('*', $field_list)){
-                array_push($field_list, 'ref_no');
-            }
-
 			// check for excludes [-fieldname]
 			$exclude_list = array();
 			foreach($field_list as $k => $fn){
@@ -914,8 +909,8 @@
 				
 			}
 
-            $this->query_params['field_list_array'] = $field_list;
-			$this->query_params['excludes_field_list'] = $exclude_list;
+            $this->query_params['field_list_array'] = array_values(array_filter($field_list));
+			$this->query_params['excludes_field_list'] = array_values(array_filter($exclude_list));
 
         }
 
