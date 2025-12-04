@@ -903,7 +903,19 @@
                 array_push($field_list, 'ref_no');
             }
 
+			// check for excludes [-fieldname]
+			$exclude_list = array();
+			foreach($field_list as $k => $fn){
+				
+				if( preg_match('/^-/', $fn) ){
+					unset($field_list[$k]);
+					$exclude_list[] = preg_replace('/^-/', '', $fn);
+				}
+				
+			}
+
             $this->query_params['field_list_array'] = $field_list;
+			$this->query_params['excludes_field_list'] = $exclude_list;
 
         }
 
@@ -1576,6 +1588,52 @@
             }
 
             return $moq;
+        }
+		
+		/**
+         *  getVectorQuery()
+         *  - the VectorQuery block is configured 
+         *  - @params: &NLP=JSON string
+         *  - See the xmla-nlp.php for indexing
+		 *  - - /xmla-nlp.php?VIEW=&DBM=blackthorn-main&FIELDS=review_text,ref_no&VFIELD=review_vector&K=5&PL=100&Q=here's the search sentence
+
+         *  - E.G. {"field":"review_vector", "vector":"search_vector", "k":"2", "size":"num_candidates"}
+		 *  - ToDO options see: https://www.elastic.co/search-labs/blog/vector-search-set-up-elasticsearch	
+         */
+        public function getVectorQuery(){
+			
+            if( isset($this->query_params['nlp']) and !empty($this->query_params['nlp']) ){
+               
+				$this->log::info("VectorQuery overwrites body.query (NLP)", get_class($this));
+                $search_vector = $this->query_params['nlp'];
+				$search_vector = json_decode($search_vector, true);
+				if(!empty($this->query_params['field_list'])){
+					$fields = explode(',', $this->query_params['field_list']);
+				}else{
+					$fields = '*';
+				}
+				
+				$vector_query = [
+					"_source" => false,
+					"fields" => $fields,
+					"retriever" => [
+						"knn" => [
+							"field" => "{$search_vector['field']}",
+							"query_vector" => $search_vector['vector'],
+							"k" => $search_vector['k'],
+							"num_candidates" => $search_vector['size']
+						]
+					]
+				];
+               
+                return $vector_query;
+
+            }else{
+				
+				$this->log::error("VectorQuery missing? (NLP)", get_class($this));
+				
+			}
+            
         }
 
 

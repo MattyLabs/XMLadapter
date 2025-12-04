@@ -79,7 +79,6 @@
          */
             $this->setHosts();
 
-
         /*
          *  SearchParser
          *  - parses $url querystring and generates the query_params
@@ -114,7 +113,8 @@
                     'from' => $this->query->get('from'),
                     'size' => $this->query->get('size'),
                     '_source' => [
-                        'includes' => $this->query->get('field_list_array')
+                        'includes' => $this->query->get('field_list_array'),
+						'excludes' => $this->query->get('excludes_field_list'),
                     ],
                     //'min_score'   => 10,  // removes tail from resultset
                     'explain' => false,
@@ -210,10 +210,17 @@
 
             }
 
+		  // VECTOR Search: completely replaces the 'body.query'
+            if (!empty($this->query->get('nlp'))) {
+				
+                Arr::set($query, 'body', $this->query->getVectorQuery());
+
+            }
+
         // MOQ: getMyOwnQuery() - completely replaces the 'body.query'
             if (!empty($this->query->getMyOwnQuery())) {
 
-                Arr::set($query, 'body.query', $this->query->getMyOwnQuery());
+                Arr::set($query, 'body', $this->query->getMyOwnQuery());
 
             }
 
@@ -222,8 +229,15 @@
             //print_r($query_test);//die;
             if(empty($query_test['body']['query']) and empty($this->query->get('sug')) ){
 
-                $this->log::error('There\'s no query to run! Check your search syntax.', get_class($this));
-                return;
+				if( !empty($this->query->get('nlp')) ){
+					
+					$this->log::info('Vector search', get_class($this));
+					
+				}else{
+					
+                	$this->log::error('There\'s no query to run! Check your search syntax.', get_class($this));
+					return;
+				}
 
             }
 
@@ -314,7 +328,13 @@
             $this->log::time('SEARCH');
 
             $host = $this->config->get('params.active_elastic_host');
-            $options = ['timeout' => 15000];
+            $options = [
+				'timeout' => 15000,
+				'request_type' => 'POST',
+				'bearer' => $this->config->get('dbm.dbm_elastic_cloud.elasticCloudId'),
+				'username' => $this->config->get('dbm.dbm_elastic_cloud.username'),
+				'password' => $this->config->get('dbm.dbm_elastic_cloud.password'),
+			];
             $rurl = "$host/{$query['index']}/_search/";
             $json = hf::get_rest($rurl, json_encode($query['body']), $options);
             $results = json_decode($json, true);
@@ -471,6 +491,11 @@
 
             }
 
+			// If DBM also sets the version - overwrite it.
+            if( !empty($this->config->get('dbm.elastic_version')) ){
+				$this->config->set('params.elastic_version', $this->config->get('dbm.elastic_version'));
+				$this->log::info("updating elastic_version from DBM: [" . $this->config->get('dbm.elastic_version') . "]", get_class($this));
+			}
             //print_r($this->config);die;
 
             $this->log::info("setHosts()", get_class($this));
@@ -516,7 +541,13 @@
                 $sniff = $this->config->get('dbm.dbm_sniff_hosts') ;
             }
             if($sniff === 'on'){
-                $this->check_hosts_avail($client_config); 
+				
+				if(!empty($this->config->get('dbm.dbm_elastic_cloud.elasticCloudId'))){
+					// elasticCloud handles available nodes for us :)
+					$this->log::info("..elasticCloudfID spotted - aborting sniff. Check you have set correct elastic_version in DBM.", get_class($this));
+				}else{
+	                $this->check_hosts_avail($client_config); 
+	            }
             }
             
             // Elastic v8.2.2 seems to require the port whereas previous versions did not!
@@ -535,19 +566,7 @@
 
             }
 
-            if( !empty($this->config->get('dbm.dbm_elastic_cloud')) ){
-
-                if( !empty( $this->config->get('dbm.dbm_elastic_cloud.elasticCloudId') )){
-                $client_config['elasticCloudId'] = $this->config->get('dbm.dbm_elastic_cloud.elasticCloudId');
-                }
-               
-                $client_config['basicAuthentication'] = [
-                    $this->config->get('dbm.dbm_elastic_cloud.username'),
-                    $this->config->get('dbm.dbm_elastic_cloud.password')
-                ];
-
-            }
-            
+		
             $this->config->set('params.active_elastic_config', $client_config);
             $this->config->set('params.active_elastic_host', reset($client_config['hosts']));
            
@@ -580,10 +599,6 @@
 			$avail_hosts = array();
             
             $this->log::info("Starting sniffer", get_class($this));
-            if( !empty($this->config->get('params.elastic_client_config.basicAuthentication')) ){
-                $auth = ( implode(':', $this->config->get('params.elastic_client_config.basicAuthentication')) );
-                //$this->log::info("..using credentials: [$auth]", get_class($this));
-            }
 
             foreach($hosts as $h){
             
@@ -592,16 +607,24 @@
                 $host = @$arr['host'] ?: @$arr['path'] ?: '';
                 $port = @$arr['port'] ?: 9200;
                 
-                if(!empty($auth)){
-                    $rurl = "$prot://$auth@$host:$port/_nodes/_all/http";	
-                } else {
-                    $rurl = "$prot://$host:$port/_nodes/_all/http";	
+				if(!empty($this->config->get('dbm.dbm_elastic_cloud.elasticCloudId'))){
+					// all you can get is version...
+					$rurl = "$prot://$host:$port";
+				}else{
+					// N.B. elastic cloud services does not permit '/_nodes/_all/http' 
+					$rurl = "$prot://$host:$port/_nodes/_all/http";		// Basic Auth ? $rurl = "$prot://base64_encode("{$options['username']}:{$options['password']}");@$host:$port/_nodes/_all/http";
                 }
                 
                 $this->log::info("..sniffing host availability: [$rurl]", get_class($this));
 				$connect_timeout = @$this->config->get('dbm.dbm_connect_timeout') ?: 250;
 				$timeout = @$this->config->get('dbm.dbm_timeout') ?: 250;
-                $options = [ 'connect_timeout' => $connect_timeout, 'timeout' => $timeout ]; // in milliseconds
+                $options = [ 
+					'connect_timeout' => $connect_timeout, // in milliseconds
+					'timeout' => $timeout,
+					'bearer' => $this->config->get('dbm.dbm_elastic_cloud.elasticCloudId'),
+					'username' => $this->config->get('dbm.dbm_elastic_cloud.username'),
+					'password' => $this->config->get('dbm.dbm_elastic_cloud.password'),
+				]; 
 				$json = hf::get_rest($rurl, '', $options);	
                 $this->log::info("..sniffer done. ct[$connect_timeout] t[$timeout]", get_class($this));
                 //echo "<!-- Adapter: [$json] -->\r\n";
@@ -614,7 +637,7 @@
                         $this->log::info("..sniffer failed to reach host:[$h] [$string]", get_class($this));
                         continue; 
                     }
-					$avail_hosts = Arr::searchKeys($data, 'host');
+					$avail_hosts = Arr::searchKeys($data, 'host') ?: [$host];
                    
 					foreach($avail_hosts as $idx=>$avail_host){
 					
@@ -625,7 +648,7 @@
                     $cfg['hosts'] = Arr::reOrder($avail_hosts, $hosts);
                     $string = implode('|', $cfg['hosts']);
                     $this->log::info("..sniffer found available hosts: [$string]", get_class($this));
-                    $this->config->set('params.elastic_version',  @Arr::searchKeys($data, 'version')[0] ?: 'Unknown');
+                    $this->config->set('params.elastic_version',  @Arr::val($data, 'number') ?: @Arr::val($data, 'version') ?: 'Unknown');
                     $this->log::info("..sniffer found elastic version: [{$this->config->get('params.elastic_version')}]", get_class($this));
                     return;
             

@@ -241,12 +241,23 @@
                     "Connection: Close"
                 ];
                 
-                if(!empty($options['auth'])){
-                    $auth = base64_encode($options['auth']);
+			}
+                
+			if(!empty($options['bearer'])){
+				
+				$auth = $options['bearer'];
+				array_unshift($header, "Authorization: ApiKey $auth");
+				
+			}elseif(!empty($options['username'])){
+				
+				$auth = base64_encode("{$options['username']}:{$options['password']}");
                     array_unshift($header, "Authorization: Basic $auth");
+				
                 }
                 
-            }
+            
+			
+			//print_r($header);
             
             $curl_options = [
     

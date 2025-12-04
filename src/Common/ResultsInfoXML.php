@@ -58,7 +58,17 @@
             foreach( $this->data['hits']['hits'] as $key=>$record){
 
                 $source = []; $add = [];
+		
+				if(empty($record['_source'])){
+					$record['_source'] = $record['fields'];
+				}
                 ksort($record['_source']);
+				
+			// elastic cloud uses "_id" and we use ref_no
+				if( empty($record['_source']['ref_no']) ){
+					$record['_source']['ref_no'] = $record['_id'];
+				}
+				
                 // field loop
                 foreach($record['_source'] as $k=>$v){
 
@@ -106,7 +116,9 @@
                 $qs_array = $this->params['qs_array'];
                 $qs_array['k'] = $source['fv_ref_no'];
                 $qs = http_build_query($qs_array);
-                $add['titleurl'] = ['@cdata' => "$basepath?$qs" ];
+				if( empty($qs_array['nlp']) ){
+                	$add['titleurl'] = ['@cdata' => "$basepath?$qs" ];
+				}
 
             // Highlights
                 if ( !empty($record['highlight']) )  {
