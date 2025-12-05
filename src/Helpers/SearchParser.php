@@ -908,6 +908,11 @@
 				}
 				
 			}
+			
+			// make sure we have ref_no
+            if( !in_array('ref_no', $field_list) ){
+                array_push($field_list, 'ref_no');
+            }
 
             $this->query_params['field_list_array'] = array_values(array_filter($field_list));
 			$this->query_params['excludes_field_list'] = array_values(array_filter($exclude_list));
