@@ -113,6 +113,13 @@
             return str_replace('|', ', ', $val);
 
         }
+		
+		private function clean_break($tag){
+
+            $val = hf::xmlfield($tag, "fn_clean_break", false);
+            return str_replace('|', '<br>', $val);
+
+        }
 
         private function format_date($tag){
 

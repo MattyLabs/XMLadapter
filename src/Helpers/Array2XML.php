@@ -119,6 +119,7 @@ class Array2XML
 
         if (is_array($arr)) {
             // get the attributes first.;
+
             if (array_key_exists('@attributes', $arr) && is_array($arr['@attributes'])) {
                 foreach ($arr['@attributes'] as $key => $value) {
                     if (!self::isValidTagName($key)) {
@@ -136,8 +137,11 @@ class Array2XML
                 unset($arr['@value']);    //remove the key from the array once done.
                 //return from recursion, as a note with value cannot have child nodes.
                 return $node;
-            } elseif (array_key_exists('@cdata', $arr)) {
-                $node->appendChild($xml->createCDATASection(self::bool2str($arr['@cdata'])));
+            } elseif (array_key_exists('@cdata', $arr)){
+				
+				if(!empty($arr['@cdata'])){
+                	$node->appendChild($xml->createCDATASection(self::bool2str($arr['@cdata'])));
+				}
                 unset($arr['@cdata']);    //remove the key from the array once done.
                 //return from recursion, as a note with cdata cannot have child nodes.
                 return $node;

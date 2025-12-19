@@ -909,6 +909,13 @@
 				
 			}
 			
+			// check the DBM for 'default_excludelist'
+			if( empty($exclude_list) and !empty($this->config->get('dbm.default_excludelist')) ){
+				
+				$exclude_list = explode(',', $this->config->get('dbm.default_excludelist'));
+				
+			}
+			
 			// make sure we have ref_no
             if( !in_array('ref_no', $field_list) ){
                 array_push($field_list, 'ref_no');
