@@ -82,7 +82,7 @@
          * @param  mixed   $default
          * @return mixed
          */
-        private static function get($array, $key, $default = null)
+        private static function get($array, $key, mixed $default = null)
         {
             if (! static::accessible($array)) {
                 return $default;
@@ -185,35 +185,39 @@
          * $path = arr_search($arr, $var)['path'];
          * $val  = arr_search($arr, $var)['value'];
          *
-         * @param $array
-         * @param $searchKey
+         * @param $haystack
+         * @param $needle
          * @return array|string[]
          */
-        public static function search($array, $searchKey){
+        public static function search(array $haystack, string $needle, string $path = '') 
+        {
 
-            if(!is_array($array)){ return array('path'=>'', 'value'=>''); }
+            if (is_object($haystack)) {
+                $haystack = (array) $haystack;
+            }
 
-            $iter = new RecursiveIteratorIterator(
-                new RecursiveArrayIterator($array),
-                RecursiveIteratorIterator::SELF_FIRST);
+            if (!is_array($haystack)) {
+                return ['path' => '', 'value' => ''];
+            }
 
-            //loop over the iterator
-            foreach ($iter as $key => $value) {
-                //if the key matches our search
-                if ($key === $searchKey) {
-                    //add the current key
-                    $keys = array($key);
-                    //loop up the recursive chain
-                    for($i=$iter->getDepth()-1;$i>=0;$i--){
-                        //add each parent key
-                        array_unshift($keys, $iter->getSubIterator($i)->key());
+            foreach ($haystack as $key => $value) {
+                
+                $currentPath = $path === '' ? $key : $path . '.' . $key;
+
+                if ($key === $needle) {
+                    return ['path' => $currentPath, 'value' => $value];
+                }
+
+                if (is_array($value) || is_object($value)) {
+                    $result = static::search($value, $needle, $currentPath);
+
+                    if ($result['path'] !== '') {
+                        return $result;
                     }
-                    //return our output array
-                    return array('path'=>implode('.', $keys), 'value'=>$value);
                 }
             }
-            //return empty if not found. PHP 7.4 this shorthand not allowed. Return empty arrays!
-            return array('path'=>'', 'value'=>'');
+
+            return ['path' => '', 'value' => ''];
 
         }
 
@@ -222,39 +226,36 @@
          *  of the key you are looking for
          *  returns an array of key (in dot notation) and the key's value.
          *
-         * @param $array
-         * @param $searchKey
+         * @param $haystack
+         * @param $needle
          * @return array
          */
-        public static function search_all_keys($array, $searchKey='')
+        public static function search_all_keys(array $haystack, string $needle, string $path = '', array &$outputArray = []) 
         {
           
-            if(!is_array($array)){ return false; }
+            // Normalise objects to arrays
+            if (is_object($haystack)) {
+                $haystack = (array) $haystack;
+            }
                     
-            $outputArray = array();
+            if (!is_array($haystack)) {
+                return $outputArray;
+            }
             
-            $iter = new RecursiveIteratorIterator(
-                new RecursiveArrayIterator($array),
-                RecursiveIteratorIterator::SELF_FIRST);
+            // 2. Otherwise, iterate through current level to search nested arrays
+            foreach ($haystack as $key=>$value) {
     
-            //loop over the iterator
-            foreach ($iter as $key => $value) {
-                //if the key matches our search
-                if ($key === $searchKey) {
-                    //add the current key
-                    $keys = array($key);
-                    //loop up the recursive chain
-                    for($i=$iter->getDepth()-1;$i>=0;$i--){
-                        //add each parent key
-                        array_unshift($keys, $iter->getSubIterator($i)->key());
+                $currentPath = $path === '' ? $key : $path . '.' . $key;
+                if($key === $needle){
+                    $outputArray[$currentPath] = $value;
                     }
-                    //return our output array
-                    $path = implode('.', $keys);
-                    $outputArray[$path] = $value;
                     
+                // recurse...recurse...
+                if (is_array($value)) {
+                    $result = static::search_all_keys($value, $needle, $currentPath, $outputArray);
                 }
             }
-            //return false if not found
+
             return $outputArray;
         }
                     
@@ -262,23 +263,34 @@
         /**
          * returns an array of values for all matching keys in array
          *
-         * @param $array
-         * @param $searchKey
+         * @param $haystack
+         * @param $needle
          * @return array
          */
-        public static function searchKeys($array, $searchKey){
+        public static function searchKeys(array $haystack, string $needle, array &$outputArray = []) 
+        {
 
-            $iter = new RecursiveIteratorIterator(new RecursiveArrayIterator($array),RecursiveIteratorIterator::SELF_FIRST);
-            $outputArray = array();
+            // Normalise objects to arrays
+            if (is_object($haystack)) {
+                $haystack = (array) $haystack;
+            }
 
-            foreach ($iter as $key => $value) {
+            if (!is_array($haystack)) {
+                return $outputArray;
+            }
 
-                if ($key === $searchKey) {
+            // 2. Otherwise, iterate through current level to search nested arrays
+            foreach ($haystack as $key=>$value) {
 
+                if($key === $needle){
                     $outputArray[] = $value;
 
                 }
 
+                // recurse...recurse...
+                if (is_array($value)) {
+                    $result = static::searchKeys($value, $needle, $outputArray);
+                }
             }
 
             return $outputArray;

@@ -37,7 +37,7 @@
          * @param int $offset
          * @return mixed
          */
-        public static function displayDate($format = 'Ymd',  $offset = 0, string $date = null) {
+        public static function displayDate($format = 'Ymd',  $offset = 0, string|null $date = null) {
 
             date_default_timezone_set('Europe/London');
             if(!empty($date)){
@@ -291,13 +291,11 @@
 
             if( $info['http_code'] == 200 ){
                 // return $response
-                curl_close($curl);
                 return $response;
             }
                 
             if( $info['http_code'] >= 400 ){
                 // return $response // make sure CURLOPT_FAILONERROR = false so we can read the Elastic API response
-                curl_close($curl);
                 return $response;
                 
             }
@@ -324,7 +322,6 @@
                 ];
                
                 $response = json_encode($error_array);
-                curl_close($curl);
                 return $response;
                 
             } else {
@@ -341,7 +338,6 @@
                     ];
                    
                     $response = json_encode($error_array); 
-                    curl_close($curl);
                     return $response;
                 }
               //$skip = intval(curl_getinfo($curl, CURLINFO_HEADER_SIZE)); 
@@ -496,11 +492,11 @@
                 //we fix this by recounting the text before the offset using multi-byte aware `strlen`
 				$i = strlen (substr ($title, 0, $i));
                 
-                //find words that should always be lowercase…
+                //find words that should always be lowercase
                 //(never on the first word, and never if preceded by a colon)
 				$m = $i>0 && substr ($title, max (0, $i-2), 1) !== ':' && 
                     preg_match ('/^(a(nd?|s|t)?|b(ut|y)|en|for|i[fn]|o[fnr]|t(he|o)|vs?\.?|via)[ \-]/i', $m)
-                ?	//…and convert them to lowercase
+                ?	//and convert them to lowercase
 					strtolower ($m)
                     
                 //else:	brackets and other wrappers

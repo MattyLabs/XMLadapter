@@ -62,9 +62,9 @@
          * use dot notation if required
          * @param $key
          * @param null $default
-         * @return mixed|null
+         * @return mixed
          */
-        public function get($key, $default = null)
+        public function get($key, mixed $default = null)
         {
             $val = '';
 
@@ -98,15 +98,15 @@
          *  - also attempts tp load and clean the QueryString if available
          *  - sets some useful / vital ENVironment vars too :)
          *
-         * @param null $querystring
-         * @param null $params
+         * @param string|null $querystring
+         * @param array|null $params
          */
-        public function init($querystring = null, $params = null)
+        public function init(string|null $querystring = null, array|null $params = null)
         {
             $this->log =  new Logger\SimpleLogger();
             /* VERSION: 3.~ Client free 2.~ for PHP v7+ 1.~ for PHP v5.6+. */
             /* - v3.0+ - version friendly without official Elastic client  */
-            $this->log::info("Initialising Config: [XMLAdapter v3.0.22]", get_class($this));
+            $this->log::info("Initialising Config: [XMLAdapter v3.0.23]", get_class($this));
 
         // Load $params
             if($params){
@@ -288,7 +288,7 @@
          * $array = ['error_msg' => '', 'error_code' => [0|1], 'rid' => '', 'data => ''];
          * @param $array
          */
-        protected function throwError($array = null){
+        protected function throwError(array|null $array = null){
 
             if($array){
                 $this->log::error(json_encode($array, JSON_PRETTY_PRINT), get_class($this) );

@@ -227,7 +227,7 @@
          * @param null $filter  [|range]
          * @return string       e.g. (thema_tree:(G))|(sort_date:(20220428~20210821))
          */
-        private function getFilters($filter = null){
+        private function getFilters(string|null $filter = null){
 
             $filter_str = '';
             if(empty($this->params['search_filters_array'])){ return null;}
