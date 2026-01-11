@@ -208,7 +208,7 @@
                     return ['path' => $currentPath, 'value' => $value];
                 }
 
-                if (is_array($value) || is_object($value)) {
+                if (is_array($value) ) {
                     $result = static::search($value, $needle, $currentPath);
 
                     if ($result['path'] !== '') {

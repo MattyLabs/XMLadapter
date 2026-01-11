@@ -483,7 +483,7 @@
             $title = preg_replace ($regx, '', $title);
             
             //find each word (including punctuation attached)
-			preg_match_all ('/[\w\p{L}&`\'‘’"“\.@:\/\{\(\[<>_]+-? */', $title, $m1, PREG_OFFSET_CAPTURE);
+			preg_match_all ('/[\w\p{L}&`\'â€˜â€™"â€œ\.@:\/\{\(\[<>_]+-? */', $title, $m1, PREG_OFFSET_CAPTURE);
             foreach ($m1[0] as &$m2) {
                 //shorthand these- "match" and "index"
                 list ($m, $i) = $m2;
@@ -500,7 +500,7 @@
 					strtolower ($m)
                     
                 //else:	brackets and other wrappers
-				: (	preg_match ('/[\'"_{(\[‘“]/', substr ($title, max (0, $i-1), 3))
+				: (	preg_match ('/[\'"_{(\[â€˜â€œ]/', substr ($title, max (0, $i-1), 3))
                 ?	//convert first letter within wrapper to uppercase
 					substr ($m, 0, 1).
 					strtoupper (substr ($m, 1, 1)).
