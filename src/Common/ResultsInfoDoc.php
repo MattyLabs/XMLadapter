@@ -20,7 +20,14 @@
 
             if($this->getDocumentCount() == 0){
                 return $this->throwError("Search didn't find any matches", "EL666");
-            }elseif (($this->getDocumentCount() > 1) ){
+            }
+			
+			if($this->getDocumentCount() == -1){
+				$reason = @$this->data['timed_out'] ?: '';
+                return $this->throwError("Search timed out: $reason", "EL999");
+            }
+			
+			if (($this->getDocumentCount() > 1) ){
                 /* or we jsut show the first one */
                 //return $this->throwError("VIEW=doc rturns only 1 Doc at a time", "EL999");
             }

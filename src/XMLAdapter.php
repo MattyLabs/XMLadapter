@@ -358,9 +358,23 @@
                
         // check for CURL error (url wrong or timed out)
             if(Arr::val($results, 'error_rest') == true){
+            	
+				$msg = Arr::val($results, 'errormessage');
                 $this->log::info("Error CURL: (". json_encode($results, JSON_PRETTY_PRINT) . ")", get_class($this));
                 $this->logQueryDetails($query, 'Search Query');
-                return;
+                
+				$results = [
+					
+					"took" => "",
+					"timed_out" => "$msg",
+					"hits" => [
+						"total" => [
+							"value" => -1,
+							"relation" => "eq"
+						],
+						"hits" => array()
+					]
+				];
             }
 
        
@@ -380,9 +394,9 @@
             $this->logQueryDetails($query, 'Search Query');
 
         // MUNGE THE RESULTS:: titleCase
-            if(  !empty($this->config->get('dbm.default_titlecase_fields')) ){
+            if(  !empty($this->config->get('dbm.default_tcase_fields')) ){
 
-                foreach($this->config->get('dbm.default_titlecase_fields') as $fn){
+                foreach($this->config->get('dbm.default_tcase_fields') as $fn){
 
                     $t1 = Arr::search_all_keys($results['hits']['hits'], $fn);
                     if( !empty($t1)){
@@ -390,6 +404,28 @@
                             if( !empty($t) and !is_array($t)){
                                 //echo "<!-- titleCase this: [$t] [$k] >> [" . hf::titleCase($t) . "]-->\r\n";
                                 Arr::set($results['hits']['hits'], $k, hf::titleCase($t));
+                            }
+                           
+                        }
+                    }
+                   
+                }
+
+            }
+
+         // MUNGE THE RESULTS:: Sentencecase
+         if(  !empty($this->config->get('dbm.default_scase_fields')) ){
+
+                $whitelist = $this->config->get('dbm.default_scase_whitelist') ?: [];
+
+                foreach($this->config->get('dbm.default_scase_fields') as $fn){
+
+                    $t1 = Arr::search_all_keys($results['hits']['hits'], $fn);
+                    if( !empty($t1)){
+                        foreach($t1 as $k => $t){
+                            if( !empty($t) and !is_array($t)){
+                                //echo "<!-- titleCase this: [$t] [$k] >> [" . hf::titleCase($t) . "]-->\r\n";
+                                Arr::set($results['hits']['hits'], $k, hf::toSentenceCaseWithWhitelist($t));
                             }
                            
                         }

@@ -285,9 +285,7 @@
             $curl = curl_init();
             curl_setopt_array($curl, $curl_options);	
             $response = curl_exec($curl);
-            //print_r("[$response]");
             $info = curl_getinfo($curl);
-            //$x = print_r($info, true); echo "<!-- $x -->\r\n"; die;
 
             if( $info['http_code'] == 200 ){
                 // return $response
@@ -303,7 +301,7 @@
             if (curl_errno($curl)){
                 
                 $cerr = curl_errno($curl);
-                $x = print_r($info, true); //echo "<!-- cUrl ERR ($cerr): getinfo: $x --\r\n"; //die;
+                //$x = print_r($info, true); //echo "<!-- cUrl ERR ($cerr): getinfo: $x --\r\n"; //die;
                 
                 if(curl_errno($curl) == '28'){
                     $emsg = "REST request ($cerr) timed out. ct[$ct] to[$to]";
@@ -526,6 +524,61 @@
             return $title;
 		}
 
+         /**
+         * @param $text string
+         * @param $whitelist array()
+         * @return string
+         */
+        public static function toSentenceCaseWithWhitelist($string, array|null $whitelist = []) 
+        {
+        // Standardize whitelist to lowercase keys for case-insensitive lookup
+            $protected = array_combine(array_map('strtolower', $whitelist), $whitelist);
+            
+            $words = preg_split('/(\s+|[:;?!.-])/', $string, -1, PREG_SPLIT_DELIM_CAPTURE);
+            $result = "";
+            $isFirstWord = true;
+            $afterColon = false;
+
+            foreach ($words as $word) {
+                $cleanWord = trim($word);
+                $lowerWord = strtolower($cleanWord);
+
+                if (preg_match('/[:;?!.-]/', $word)) {
+                    if ($cleanWord === ':') $afterColon = true;
+                    $result .= $word;
+                    continue;
+                }
+
+                if ($cleanWord === "") {
+                    $result .= $word;
+                    continue;
+                }
+
+                // Check 1: Is it in our whitelist?
+                if (isset($protected[$lowerWord])) {
+                    $result .= $protected[$lowerWord];
     }
+                // Check 2: Is it an automatic acronym (2+ caps)?
+                elseif (preg_match('/[A-Z]{2,}/', $word)) {
+                    $result .= $word;
+                } 
+                // Check 3: Standard sentence case logic
+                else {
+                    $word = mb_strtolower($word, 'UTF-8');
+                    if ($isFirstWord || $afterColon) {
+                        $word = ucfirst($word);
+                    }
+                    $result .= $word;
+                }
+
+                $isFirstWord = false;
+                if ($cleanWord !== "") $afterColon = false;
+            }
+
+            return $result;
+        }
+
+    }
+
 
     

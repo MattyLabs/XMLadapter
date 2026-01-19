@@ -12,6 +12,11 @@
             if($this->getDocumentCount() == 0){
                 return $this->throwError("Search didn't find any matches", "EL666");
             }
+			
+			if($this->getDocumentCount() == -1){
+				$reason = @$this->data['timed_out'] ?: '';
+                return $this->throwError("Search timed out: $reason", "EL999");
+            }
 
             $this->output_array['resultsetinformation'] = $this->getResultsInfo();
                 $this->output_array += $this->data;
