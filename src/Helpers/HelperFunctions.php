@@ -301,13 +301,13 @@
             if (curl_errno($curl)){
                 
                 $cerr = curl_errno($curl);
-                //$x = print_r($info, true); //echo "<!-- cUrl ERR ($cerr): getinfo: $x --\r\n"; //die;
                 
                 if(curl_errno($curl) == '28'){
                     $emsg = "REST request ($cerr) timed out. ct[$ct] to[$to]";
                 }elseif(curl_errno($curl) == '22'){
                     $emsg = "BAD REST request ($cerr) (http:400)";
                 }else{
+                    $x = print_r($info, true); //echo "<!-- cUrl ERR ($cerr): getinfo: $x --\r\n"; //die;
                     $emsg = "CURL Err $x";
                 }
 
