@@ -37,7 +37,7 @@
          * @param int $offset
          * @return mixed
          */
-        public static function displayDate($format = 'Ymd',  $offset = 0, string|null $date = null) {
+        public static function displayDate($format = 'Ymd',  $offset = 0, ?string $date = null) {
 
             date_default_timezone_set('Europe/London');
             if(!empty($date)){
@@ -529,7 +529,7 @@
          * @param $whitelist array()
          * @return string
          */
-        public static function toSentenceCaseWithWhitelist($string, array|null $whitelist = []) 
+        public static function toSentenceCaseWithWhitelist($string, ?array $whitelist = []) 
         {
         // Standardize whitelist to lowercase keys for case-insensitive lookup
             $protected = array_combine(array_map('strtolower', $whitelist), $whitelist);

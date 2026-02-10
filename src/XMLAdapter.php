@@ -52,7 +52,7 @@
          * @param string|null $url
          * @param array|null $params
          */
-        public function __construct(string|null $url = null, array|null $params = null)
+        public function __construct(?string $url = null, ?array $params = null)
         {
 
             $this->log = new Logger\SimpleLogger();
@@ -68,7 +68,7 @@
          * Output formats = [array()|xml|json]
          * @param $format string
          */
-        public function search(string|null $format = null)
+        public function search(?string $format = null)
         {
 
         /*

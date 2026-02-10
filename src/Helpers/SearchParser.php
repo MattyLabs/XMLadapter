@@ -28,7 +28,7 @@
         /**
          * @param null $qs_array
          */
-        public function __construct(array|null $qs_array = null)
+        public function __construct(?array $qs_array = null)
         {
             // loadup all the page's $params
             $this->config = Config::instance();

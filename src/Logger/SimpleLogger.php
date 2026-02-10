@@ -331,7 +331,7 @@
      *
      * The method format_log_entry() is used to format the log.
      */
-    public static function dump_to_string(string|null $debug_param = null) {
+    public static function dump_to_string(?string $debug_param = null) {
 
         $output = ''; $arr = [];
 
