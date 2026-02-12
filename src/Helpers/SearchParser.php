@@ -1599,38 +1599,84 @@
 		
 		/**
          *  getVectorQuery()
-         *  - the VectorQuery block is configured 
-         *  - @params: &NLP=JSON string
+			@NLQ:		search terms, prompts, sentence to be processed
+			@DBM:	 	index to search (check mapping for deep_vector fields)
+			@FIELDS: 	i.e. _source fields (default = '*')
+			@VFIELD: 	name of vector_field (defaults to 'vector_384'. N.B.: 'vector_768')
+			@KNN:		k-Nearest Neighbours (kNN): i.e. no. of results to return
+			@KNC:	 	the number of candidates to consult: must be larger than KNN
+			@NLP:		vector query e.g. {"vfield":"vector_384","knn":5,"knc":10,"vector":[0.06393668055534363,0.265777587890625,...]}
+	
          *  - See the xmla-nlp.php for indexing
-		 *  - - /xmla-nlp.php?VIEW=&DBM=blackthorn-main&FIELDS=review_text,ref_no&VFIELD=review_vector&K=5&PL=100&Q=here's the search sentence
-
-         *  - E.G. {"field":"review_vector", "vector":"search_vector", "k":"2", "size":"num_candidates"}
-		 *  - ToDO options see: https://www.elastic.co/search-labs/blog/vector-search-set-up-elasticsearch	
+		 *  - E.G.: xmla-nlp.php/?DBM=blackthorn-main&NLQ=lazy fox&DEBUG=on,query&FIELDS=vector_text,ref_no,ctitle,sort_date,thema_subject,thema_subj_code&VFIELD=vector_384&KNN=5&KNC=10
+		 *  - see: https://www.elastic.co/search-labs/blog/vector-search-set-up-elasticsearch	
          */
         public function getVectorQuery(){
 			
+		//print_r($this->query_params); //die;	
+			
             if( isset($this->query_params['nlp']) and !empty($this->query_params['nlp']) ){
                
-				$this->log::info("VectorQuery overwrites body.query (NLP)", get_class($this));
+				$this->log::info("Processing Vector Query (NLP)", get_class($this));
                 $search_vector = $this->query_params['nlp'];
 				$search_vector = json_decode($search_vector, true);
+				//print_r($search_vector); die;
+				$search_terms = @$this->query_params['search_terms'] ?: @$this->query_params['nlq'] ?: '';
 				
 				$vector_query = [
 					'_source' => [
                         'includes' => $this->query_params['field_list_array'],
 						'excludes' => $this->query_params['excludes_field_list'],
                     ],
-					//"fields" => $fields,
-					"retriever" => [
+					"size" => $this->query_params['knn'],
 						"knn" => [
-							"field" => "{$search_vector['field']}",
+						"field" => $search_vector['vfield'],
 							"query_vector" => $search_vector['vector'],
-							"k" => $search_vector['k'],
-							"num_candidates" => $search_vector['size']
-						]
-					]
+						"k"	=> $search_vector['knn'],
+						"num_candidates" => $search_vector['knc'],
+						"boost" => 5.0,
+						//"filter" => '',
+					],
+
+				];
+				
+				// E.G. SF1=contributor&ST1=matthew
+				if( !empty($this->query_params['search_query']) ){
+					
+					$stdq = [
+						"query" => [
+							"bool" => [
+								"should" => [								
+									"query_string" => [
+										"query" => $this->query_params['search_query'],
+										"boost" => 0.5,
+										//"default_operator" =>  $this->config->get('dbm.default_search_operator') ?: 'AND',	// should = ANY of the terms
+										"minimum_should_match" => '2<75%',
+									],
+								],
+								//"filter" => '',		
+							],
+						],
 				];
                
+					$vector_query += $stdq;
+					
+					// E.G. &SQF=/format_code:BB/
+					if( !empty($this->query_params['search_filters_array']) ){
+					
+						Arr::set($vector_query, 'query.bool.filter', $this->query_params['search_filters_array']);
+						
+					}
+					
+				}
+				
+				// E.G. &SQF=/format_code:BB/
+				if( !empty($this->query_params['search_filters_array']) ){
+					
+					Arr::set($vector_query, 'knn.filter', $this->query_params['search_filters_array']);
+					
+				}
+                
                 return $vector_query;
 
             }else{

@@ -126,6 +126,8 @@
             $arr['lastpage'] = $this->pageLast($dc,$pl);
 
             $qs_array = $this->params['qs_array'];
+			unset($qs_array['nlp']);	// Natural Language Parser: not needed here
+
             $qs_array['m'] = 1;
             $qs = http_build_query($qs_array);
             $arr['firstpage_url'] = ($doc_start > 1) ? ["@cdata" => "$basepath?$qs"] : '';

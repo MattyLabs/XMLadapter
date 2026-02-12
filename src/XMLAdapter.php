@@ -210,7 +210,7 @@
 
             }
 
-		  // VECTOR Search: completely replaces the 'body.query'
+		  // VECTOR Search: completely replaces the 'body.query' !!N.B. The XMLAdapter does NOT generate the query vectors see xmla-nlp.php
             if (!empty($this->query->get('nlp'))) {
 				
                 Arr::set($query, 'body', $this->query->getVectorQuery());
