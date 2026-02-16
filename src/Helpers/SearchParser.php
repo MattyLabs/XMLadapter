@@ -1613,7 +1613,7 @@
          */
         public function getVectorQuery(){
 			
-		//print_r($this->query_params); //die;	
+		//print_r($this->query_params); //die;	 $this->config->get('dbm.default_vector_boost')
 			
             if( isset($this->query_params['nlp']) and !empty($this->query_params['nlp']) ){
                
@@ -1622,19 +1622,25 @@
 				$search_vector = json_decode($search_vector, true);
 				//print_r($search_vector); die;
 				$search_terms = @$this->query_params['search_terms'] ?: @$this->query_params['nlq'] ?: '';
+				$boost = @$this->config->get('dbm.default_vector_boost') ?: "5.0:0.5";
+				if( !preg_match("/(\d:\d)/", $boost) ){
+					$boost = "5.0:0.5";
+				}
+				$vector_boost = explode(':', $boost)[0];
+				$search_boost = explode(':', $boost)[1];
 				
 				$vector_query = [
 					'_source' => [
                         'includes' => $this->query_params['field_list_array'],
 						'excludes' => $this->query_params['excludes_field_list'],
                     ],
-					"size" => $this->query_params['knn'],
+					"size" => @$this->query_params['pl'] ?: $search_vector['knn'],
 						"knn" => [
 						"field" => $search_vector['vfield'],
 							"query_vector" => $search_vector['vector'],
 						"k"	=> $search_vector['knn'],
 						"num_candidates" => $search_vector['knc'],
-						"boost" => 5.0,
+						"boost" => $vector_boost,
 						//"filter" => '',
 					],
 
@@ -1649,9 +1655,9 @@
 								"should" => [								
 									"query_string" => [
 										"query" => $this->query_params['search_query'],
-										"boost" => 0.5,
+										"boost" => $search_boost,
 										//"default_operator" =>  $this->config->get('dbm.default_search_operator') ?: 'AND',	// should = ANY of the terms
-										"minimum_should_match" => '2<75%',
+										"minimum_should_match" => @$this->config->get('dbm.default_min_should_match') ?: '2<75%', 	//default_min_should_match
 									],
 								],
 								//"filter" => '',		
