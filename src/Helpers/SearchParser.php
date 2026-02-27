@@ -1226,8 +1226,29 @@
 			}//end ISBN check}
 				
 		// MATCH_ALL CHECK	
-			if( isset($must['match_all']) ){
-				$should = [];
+		// "SF1=keyword&ST1=ref_no&SF2=&ST2=" means match all OK!
+			if(Arr::val($this->query_params, 'search_array.keyword')){
+				
+				if( preg_match('/ref_no/', Arr::val($this->query_params, 'search_array.keyword'))  ){
+
+					if(count($this->query_params['search_array']) == 1 ) {
+
+						$should = [
+							'match_all' => ['boost' => 1.0]
+						];
+
+						return $should;
+
+					}elseif (count($this->query_params['search_array']) > 1 and empty($this->query_params['k'])) {
+
+					// then we have "SF1=keyword&ST1=ref_no&SF2=contributor&ST2=matty" i.e. match_all BUT don't match_all!
+						self::$log->error("Incorrect use of 'SF1=keyword&ST1=ref_no' This means match_all so you can't then add more search terms!", get_class($this));
+						echo self::$log->dump_to_string();
+						exit;
+
+					}
+
+				}
 			}
   
             return $should;
