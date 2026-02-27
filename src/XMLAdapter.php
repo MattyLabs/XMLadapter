@@ -87,7 +87,7 @@
             $this->query = new SearchParser();
 
 
-            //print_r($this->query);die;
+           // print_r($this->query);die;
             $host_str =  $this->config->get('params.active_elastic_host');
             $this->log::info("active host: [$host_str]", get_class($this));
             $this->log::info("elastic_version: [{$this->config->get('params.elastic_version')}]", get_class($this));

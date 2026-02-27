@@ -4,6 +4,8 @@
     use MattyLabs\XMLAdapter\Config;
     use MattyLabs\XMLAdapter\Logger\SimpleLogger;
     use MattyLabs\XMLAdapter\Helpers\HelperFunctions as hf;
+	use MattyLabs\XMLAdapter\Helpers\Arr as Arr;
+	
 
     class SearchParser
     {
@@ -16,7 +18,7 @@
         /**
          * @var SimpleLogger
          */
-        protected SimpleLogger $log;
+        public static SimpleLogger $log;
 
         /** Contains all the search components needed to construct the final query
          *  You can access values using SearchParser->get($key)
@@ -33,13 +35,13 @@
             // loadup all the page's $params
             $this->config = Config::instance();
 
-            $this->log = new SimpleLogger();
+            self::$log = new SimpleLogger();
 
             $this->query_params = $qs_array ?: $this->config->get('url.qs_array');
 
-            $this->log::info('SearchParser initialised..', get_class($this));
-            //$pr = print_r($this->query_params, true);$this->log::info("$pr", get_class($this));
-            //$cg = print_r($this->config, true);$this->log::info("$cg", get_class($this));
+            self::$log->info('SearchParser initialised..', get_class($this));
+            //$pr = print_r($this->query_params, true);self::$log->info("$pr", get_class($this));
+            //$cg = print_r($this->config, true);self::$log->info("$cg", get_class($this));
             //echo $this->log::dump_to_string(); die;
 
             $this->cleanParams();
@@ -51,11 +53,10 @@
             $this->compileFieldList();
             $this->setPageCount();
             $this->setPageSize();
-            $this->setMinShouldMatch();
            
 
-            //$this->log::info("search_query:[{$this->query_params['search_query']}]", get_class($this));
-            //$pr = print_r($this->query_params, true);$this->log::info("$pr", get_class($this));
+            //self::$log->info("search_query:[{$this->query_params['search_query']}]", get_class($this));
+            //$pr = print_r($this->query_params, true);self::$log->info("$pr", get_class($this));
 
         }
 
@@ -299,8 +300,7 @@
             //	Handle action codes
             foreach($params as $key => $val) {
 
-                if (($key == 'bic'))
-                {
+                if (($key == 'bic')){
                     //	This is a subject search :: Rewrite the search field to BIC
                     $total_field_count++;
                     $num = hf::padz($total_field_count, 2);
@@ -308,9 +308,8 @@
                     $params['search_field_' . $num] = $this->config->get('dbm.short_code_bic');
                     $params['search_text_'  . $num] = $val;
                     unset($params[$key]);
-                }
-                elseif ($key == 'isb')
-                {
+					
+                }elseif($key == 'isb' and !empty($val)){
                     //	This is an identifier search :: Rewrite the search field to IDENTIFIER
                     $total_field_count++;
                     $num = hf::padz($total_field_count, 2);
@@ -318,9 +317,8 @@
                     $params['search_field_' . $num]	= $this->config->get('dbm.short_code_isb');
                     $params['search_text_'  . $num]	= $val;
                     unset($params[$key]);
-                }
-                elseif ($key == 'ehcat')
-                {
+					
+                }elseif($key == 'ehcat'){
                     //	This is a publishers subject search :: Rewrite the search field to CAT_CLASS
                     $total_field_count++;
                     $num = hf::padz($total_field_count, 2);
@@ -328,29 +326,21 @@
                     $params['search_field_' . $num]	= $this->config->get('dbm.short_code_ehcat');
                     $params['search_text_'  . $num]	= $val;
                     unset($params[$key]);
-                }
-                elseif ($key == 'since')
-                {
+					
+                }elseif($key == 'since'){
                     //	This is a date range search, gives us all books published from <n> days - set the $qs['dateRange_'] params
                     $this->dateRange($val, $key, $params);
 
-                }
-                elseif (($key == 'adv'))
-                {
+                }elseif(($key == 'adv')){
                     //	This is a date range search, gives us all books published within <n> days
                     $this->dateRange($val, $key, $params);
 
-                }
-                elseif ($key == 'dtspan')
-                {
+                }elseif($key == 'dtspan'){
                     // should be &dtspan=30:30 sort of thing
 
                     $this->dateRange($val, $key, $params);
 
-
-                }
-                elseif (($key == 'kyt'))
-                {
+                }elseif(($key == 'kyt')){
                     //	This is a keyword search
                     $total_field_count++;
                     $num = hf::padz($total_field_count, 2);
@@ -358,9 +348,8 @@
                     $params['search_field_' . $num]	= 'keyword';
                     $params['search_text_'  . $num]	= $val;
                     unset($params[$key]);
-                }
-                elseif (($key == 'aub'))
-                {
+					
+                }elseif(($key == 'aub')){
                     //	This is an author search
                     $total_field_count++;
                     $num = hf::padz($total_field_count, 2);
@@ -368,9 +357,8 @@
                     $params['search_field_' . $num]	= $this->config->get('dbm.short_code_aub');
                     $params['search_text_'  . $num]	= $val;
                     unset($params[$key]);
-                }
-                elseif ($key == 'tit')
-                {
+					
+                }elseif($key == 'tit'){
                     //	This is a title search
                     $total_field_count++;
                     $num = hf::padz($total_field_count, 2);
@@ -706,13 +694,13 @@
 
             if(!empty($this->query_params['sqf']) ) {
 
-                $this->log::info('Search Filters initialising...', get_class($this));
+                self::$log->info('Search Filters initialising...', get_class($this));
                 $sf = trim($this->query_params['sqf'], '[/]');
                 $sf = str_replace('&', '{38}', $sf);	// save any '&' in the query
                 $sf = str_replace('/', '&', $sf);	// maybe we use ~ or ^ or | or `
                 $sf = str_replace(':', '=', $sf);
                 //$sf = str_replace(';', '.', $sf);   // Some old sites used ';' in place of '.' for field.raw etc.
-                $this->log::info("search filter: [$sf]", get_class($this));
+                self::$log->info("search filter: [$sf]", get_class($this));
 
                 $sfa = hf::parseQueryStr($sf); // N.B. parse_str converts '.' into '_' so lets not use it :)
 
@@ -758,6 +746,9 @@
 
                         }elseif (strpos($val, '~') > 0 ){
                             $filters = explode('~', $val, 2);
+							if( is_numeric($filters[0]) and is_numeric($filters[1]) ){
+								
+								self::$log->info('..setting range~filter "a~b" [gte:a lte:b]', get_class($this));
                             $search_filters[] = [
                                 'range' => [
                                     $key => [
@@ -767,8 +758,18 @@
                                 ]
                             ];
 
+							}else{
+								
+								 $search_filters[] = [
+									'term' => [$key => $val]
+								];
+							}
+
                         }elseif (strpos($val, '-') > 0 ){
                             $filters = explode('-', $val, 2);
+							if( is_numeric($filters[0]) and is_numeric($filters[1]) ){
+								
+								self::$log->info('..setting range-filter "a-b" [gt:a lt:b]', get_class($this));
                             $search_filters[] = [
                                 'range' => [
                                     $key => [
@@ -777,6 +778,13 @@
                                     ]
                                 ]
                             ];
+
+							}else{
+								
+								 $search_filters[] = [
+									'term' => [$key => $val]
+								];
+							}
 
                         } else {
                             // 'SQF=/1:arts/2:UK3' or 'SQF=psc:arts/facet:UK3'
@@ -806,12 +814,12 @@
                 $this->query_params['search_filters'] = rtrim($tmp, '[/]');
                 // This is the Elasticsearch ready version of the filters
                 $this->query_params['search_filters_array'] = array_filter($search_filters);
-                $this->log::info('Search Filters done.', get_class($this));
+                self::$log->info('Search Filters done.', get_class($this));
                 return array_filter($search_filters);
 
             }else{
 
-                $this->log::info('Search Filters: None.', get_class($this));
+                self::$log->info('Search Filters: None.', get_class($this));
 
             }
 
@@ -942,8 +950,10 @@
                 preg_match('/ref_no/', $this->query_params['search_fields']) //or
                 //preg_match('/978\d{10}/', $this->query_params['search_terms'])
             ){
+				//self::$log->info('checkISBNQuery: [True]', get_class($this));
                 return true;
             } else {
+				//self::$log->info('checkISBNQuery: [False]', get_class($this));
                 return false;
             }
         }
@@ -985,76 +995,63 @@
         }
 
         /**
-         *  Most params can be set in the DBM ($this->>config[]) and overwritten via the urlQueryString ($this->>query_params[])
-         *  For an AGGS only search you need to set PL=0
-         */
-        protected function setMinShouldMatch(){
-
-        // Start with DBM Default
-            if(!isset($this->query_params['msm']) ){
-                //$msm = $this->config->get('dbm.default_min_should_match') ?? '';
-                if($this->config->get('dbm.default_min_should_match') ){
-                    $msm = $this->config->get('dbm.default_min_should_match');
-                }else{
-                    $msm = '';
-                }
-
-            }else{
-                // reset or change $msm via the url
-                if( empty($this->query_params['msm']) or $this->query_params['msm'] == 0 or $this->query_params['msm'] == 'off' ){
-                    $msm = '';
-                } else {
-                    $msm = $this->query_params['msm'];
-                }
-            }
-
-        /* Some search params bear on whether MSM is allowed */
-            // ISBN searches can't have msm
-            if( $this->checkISBNQuery() == true) {
-                $msm = '';
-            }
-
-            $msm = str_replace('&lt;', '<', $msm);
-            $msm = str_replace('&gt;', '>', $msm);
-            $msm = str_replace('%25;', '%', $msm);
-
-            $this->query_params['msm'] = $msm ?: '';
-
-        }
-
-
-        /**
          * @return array[]|\float[][]
          */
         public function getMust(){
 
         // Filter ONLY Search
             if( empty($this->query_params['search_terms']) and empty($this->query_params['k']) and empty($this->query_params['q'])){
-                $this->log::info("skipping MUST query. No search terms", get_class($this));
+                self::$log->info("skipping MUST query. No search terms", get_class($this));
                 return [];
-            }
-
-             if( !empty($this->query_params['must']) and ($this->query_params['must'] == 'false' or $this->query_params['must'] == 'off') ){
-                $this->log::info("MUST query switched off..", get_class($this));
-                return [];
-            }
-
-            $this->log::info("Processing MUST query..", get_class($this));
-
-        // What's all the fuzz
-            $fuzz =  $this->config->get('dbm.default_fuzziness');
-            if( isset($this->query_params['fuzzy'])){
-                if(empty($this->query_params['fuzzy'])){
-                    $fuzz = 0;
-                }else{
-                    $fuzz = $this->query_params['fuzzy'];
                 }
-            }
-            //echo "[$fuzz]";die;
 
-        // Set default_prefixlength & default_boost in DBM
-            $prefixLength = $this->config->get('dbm.default_prefixlength') ?: 0;
-            $boost = $this->config->get('dbm.default_boost') ?: 1;
+			$disabled = $this->config->get('dbm.default_must') ?: @$this->query_params['must'] ?: '';
+            if( !empty($disabled) and ($disabled == 'false' or $disabled == 'off') ){
+                self::$log->info("MUST query switched off..", get_class($this));
+                return [];
+            }
+
+            self::$log->info("Processing MUST query..", get_class($this));
+
+		// GET MUST FROM DBM
+			$must = $this->config->get('dbm.elastic_must');
+			$search_type = $this->config->get('dbm.default_search_type') ?: 'best_fields';
+			
+			if( !empty($must) ){
+				
+				//$m = print_r($must, true); echo "<!-- Eek! $m -->\r\n";
+				$flat_must = json_encode($must, JSON_PRETTY_PRINT);
+				$flat_must = str_replace('search_query', addslashes( $this->query_params['search_query']), $flat_must);
+				$flat_must = str_replace('search_terms', addslashes( $this->query_params['search_terms']), $flat_must);
+				$flat_must = str_replace('search_type', $search_type, $flat_must);
+				$flat_must = str_replace("\\'", "'", $flat_must);   // single quotes inside JSON sting don't need to be escaped!
+
+				preg_match_all('/yyyymmdd\[(.*)?\]/',$flat_must, $matches);
+				foreach($matches[0] as $key=>$val){
+
+					$d = $matches[1][$key];
+					$dte = hf::displayDate('Ymd', $d);
+					$flat_must = str_replace($val, $dte, $flat_must);
+        }
+
+				$must = json_decode($flat_must, true);
+
+			}else{
+		// DEFAULT 'MUST' IF DBM EMPTY
+				 $must = [
+
+                    'query_string' => [
+
+                        'query' => $this->query_params['search_query'],
+                        'default_operator' =>  $this->config->get('dbm.default_search_operator') ?: 'AND',
+                        'boost' => $this->config->get('dbm.default_phrase_slop') ?: 1.0,
+                        'phrase_slop' => $this->config->get('dbm.default_phrase_slop'),
+
+                    ]
+
+                ];
+
+            }
 
 
         // "SF1=keyword&ST1=ref_no&SF2=&ST2=" means match all OK!
@@ -1073,8 +1070,8 @@
 					}elseif (count($this->query_params['search_array']) > 1 and empty($this->query_params['k'])) {
 
 					// then we have "SF1=keyword&ST1=ref_no&SF2=contributor&ST2=matty" i.e. match_all BUT don't match_all!
-						$this->log::error("Incorrect use of 'SF1=keyword&ST1=ref_no' This means match_all so you can't then add more search terms!", get_class($this));
-						echo $this->log::dump_to_string();
+						self::$log->error("Incorrect use of 'SF1=keyword&ST1=ref_no' This means match_all so you can't then add more search terms!", get_class($this));
+						echo self::$log->dump_to_string();
 						exit;
 
 					}
@@ -1082,68 +1079,67 @@
 				}
 			}
 
-        // QUERY_STRING Query Syntax indicated
-            if( strpos($this->query_params['search_query'], ':') > 0 && empty($this->query_params['fmm']) ){
 
-                $must = [
+		// QS PARAMS? You can reset these values from the query_string params
+			$fuzz = @$this->query_params['fuzzy'] ?: '';
+			$msm =  @$this->query_params['msm'] ?: '';
+			$msm = str_replace('&lt;', '<', $msm);
+            $msm = str_replace('&gt;', '>', $msm);
+            $msm = str_replace('%25;', '%', $msm);
+			self::$log->info("PARAMS: FUZZY:[$fuzz] MSM:[$msm] ", get_class($this));
 
-                    'query_string' => [
+		// Reset Fuzziness
+			if(!empty($fuzz)){
 
-                        'query' => $this->query_params['search_query'],
-                        'default_operator' =>  $this->config->get('dbm.default_search_operator') ?: 'AND',
-                        'boost' => 1.0,
-                        'fuzziness' => $fuzz,	// Seems to be OK with ~1|2 on each term as well
-                        'phrase_slop' => $this->config->get('dbm.default_phrase_slop'),
+				if( isset($must['query_string']) ){
+					Arr::set($must, 'query_string.fuzziness', $fuzz);
+				}elseif( isset($must['multi_match']) ){
+					Arr::set($must, 'multi_match.fuzziness', $fuzz);
+				}
 
-                    ]
+			}else{
 
-                ];
-
-            // For phrase searches
-                if($fuzz == 0){
+				if( isset($must['query_string']) ){
                     Arr::del($must, 'query_string.fuzziness');
+				}elseif( isset($must['multi_match']) ){
+					Arr::del($must, 'multi_match.fuzziness');
                 }
 
-            // Minimum Should Match
-                if( !empty($this->query_params['msm'])){
-                    Arr::set($must,'query_string.minimum_should_match', $this->query_params['msm']);
                 }
 
-            // ISBN Query
-                if( $this->checkISBNQuery() == true ){
-                    Arr::set($must,'query_string.default_operator', 'OR');
-                }
+		// Reset minimum_should_match
+			if(!empty($msm)){
+				
+				if( preg_match("/(off|false)/i", $msm) ){
 
-                return $must;
+					if( isset($must['query_string']) ){
+						Arr::del($must, 'query_string.minimum_should_match');
+					}elseif( isset($must['multi_match']) ){
+						Arr::del($must, 'multi_match.minimum_should_match');
             }
 
-        // Last resort Multi Match Query
-            $must = [
+				}else{
 
-                'multi_match' => [
+					if( isset($must['query_string']) ){		
+						Arr::set($must, 'query_string.minimum_should_match', $msm);
+					}elseif( isset($must['multi_match']) ){
+						Arr::set($must, 'multi_match.minimum_should_match', $msm);
+					}
 
-                    'query' => $this->query_params['search_terms'],
-                    'type' => $this->config->get('dbm.default_search_type') ?: 'best_fields',
-                    'fields' => $this->config->get('dbm.default_keyword_fields') ?: 'cindex',
-                    'slop' => $this->config->get('dbm.default_phrase_slop'),
-                    'fuzziness' => $fuzz,		//yes its a permitted parameter but no it doesn't work with query_string!! you need to add '~1' etc.
-                    'prefix_length' => $prefixLength,	// no fuzziness where type = phrase or phrase_prefix
-                    'boost' => $boost,
-                    //'operator' => $this->config->get('dbm.default_search_operator'),
+				}
 
-                ]
+			}
 
-            ];
+        // ISBN Query
+			if( $this->checkISBNQuery() == true ){
 
-            if( !empty($this->query_params['msm'])){
-                Arr::set($must,'multi_match.minimum_should_match', $this->query_params['msm']);
-            }
+				Arr::set($must,'query_string.default_operator', 'OR');
+				Arr::del($must, 'multi_match.minimum_should_match');
+				Arr::del($must, 'query_string.minimum_should_match');
 
-             // For phrase searches
-             if($fuzz == 0){
-                Arr::del($must, 'multi_match.fuzziness');
             }
             
+			$must = Arr::filterBlanks($must);
 
             return $must;
 
@@ -1161,22 +1157,27 @@
         {
 
             // Filter ONLY Search
-            if( empty($this->query_params['search_terms']) and empty($this->query_params['k'])){
-                $this->log::info("SHOULD query - no terms to process.", get_class($this));
+            if( empty($this->query_params['search_terms']) and empty($this->query_params['k']) and empty($this->query_params['q']) ){
+                self::$log->info("SHOULD query - no terms to process.", get_class($this));
                 return [];
             }
 
-			 if( !empty($this->query_params['should']) and ($this->query_params['should'] == 'false' or $this->query_params['should'] == 'off') ){
-                $this->log::info("SHOULD query switched off..", get_class($this));
+			$disabled = $this->config->get('dbm.default_should') ?: @$this->query_params['should'] ?: '';
+            if( !empty($disabled) and ($disabled == 'false' or $disabled == 'off') ){
+                self::$log->info("SHOULD query switched off..", get_class($this));
                 return [];
             }
         
-            $this->log::info("Processing SHOULD query.", get_class($this));
+            self::$log->info("Processing SHOULD query.", get_class($this));
+			
+		// GET 'SHOULD' FROM DBM
             $should = $this->config->get('dbm.elastic_should');
+			$search_type = $this->config->get('dbm.default_search_type') ?: 'best_fields';
            
             $flat_should = json_encode($should, JSON_PRETTY_PRINT);
-            $flat_should = str_replace('search_terms', addslashes( $this->query_params['search_terms']), $flat_should);
             $flat_should = str_replace('search_query', addslashes( $this->query_params['search_query']), $flat_should);
+            $flat_should = str_replace('search_terms', addslashes( $this->query_params['search_terms']), $flat_should);
+            $flat_should = str_replace('search_type', $search_type, $flat_should);
             $flat_should = str_replace("\\'", "'", $flat_should);   // single quotes inside JSON sting don't need to be escaped!
 
             preg_match_all('/yyyymmdd\[(.*)?\]/',$flat_should, $matches);
@@ -1188,6 +1189,46 @@
             }
 
             $should = json_decode($flat_should, true);
+			$must = $this->getMust(); //print_r($must); 
+
+		// ISBN Query
+			if( $this->checkISBNQuery() == true ){
+				
+				if( empty($must) ){
+					
+					if( empty($should) ){
+						
+						self::$log->info("SHOULD query - no terms to process.", get_class($this));
+						return [];
+						
+					}else{
+			//echo "<!-- eek! -->\r\n";	
+						if( isset($should[0]) ){
+							$should = $should[0];
+						}
+					
+						if( isset($should['query_string']) ){
+							Arr::set($should, 'query_string.default_operator', 'OR');
+						}
+						
+						if( isset($should['multi_match']) ){
+							Arr::set($should, 'multi_match.default_operator', 'OR');
+						}
+						
+			//print_r($should);		
+					}
+					
+				}else{
+					
+					$should = [];
+					
+				}
+			}//end ISBN check}
+				
+		// MATCH_ALL CHECK	
+			if( isset($must['match_all']) ){
+				$should = [];
+			}
   
             return $should;
 
@@ -1207,7 +1248,7 @@
 
             if( !empty($this->query_params['like']) ){
 
-                $this->log::info("Like is on.", get_class($this));
+                self::$log->info("Like is on.", get_class($this));
                 $like = $this->config->get('dbm.elastic_like');
 
                 $flat_like = json_encode($like, JSON_PRETTY_PRINT);
@@ -1256,7 +1297,7 @@
 
             if(!empty($aggs)){
 
-                $this->log::info("Aggregations are on: [$aggs]", get_class($this));
+                self::$log->info("Aggregations are on: [$aggs]", get_class($this));
                 $aggs = explode(',', $aggs);
                 foreach($aggs as $a){
 
@@ -1318,7 +1359,7 @@
 
             if( !empty($collapse_field) and empty($this->query_params['nqf']) and $collapse_field != 'off' and $this->checkISBNQuery() == false ){
 
-                $this->log::info("Collapse is on. Field: [$collapse_field]", get_class($this));
+                self::$log->info("Collapse is on. Field: [$collapse_field]", get_class($this));
                 $collapse = [
                     'field' => $collapse_field,
                     'inner_hits' => [
@@ -1347,14 +1388,16 @@
             $rescore = null;
 
 			 if( !empty($this->query_params['rescore']) and ($this->query_params['rescore'] == 'false' or $this->query_params['rescore'] == 'off') ){
-                $this->log::info("RESCORE query switched off..", get_class($this));
+                self::$log->info("RESCORE query switched off..", get_class($this));
                 return [];
             }
 
             $collapse_field = @$this->query_params['collapse'] ?: $this->config->get('dbm.collapse') ?: '';
+			if(preg_match("/off|false/i", $collapse_field)){$collapse_field = '';};
+
             if($this->config->get('dbm.elastic_rescore_show') and $this->checkISBNQuery() == false and empty($collapse_field) and empty($this->query_params['sort']) ){
 
-                $this->log::info("Rescore is on.", get_class($this));
+                self::$log->info("Rescore is on.", get_class($this));
                 //$rescore = $this->config->get('dbm.elastic_rescore') ?? [];
                 if($this->config->get('dbm.elastic_rescore')){
                     $rescore = $this->config->get('dbm.elastic_rescore') ;
@@ -1395,7 +1438,7 @@
             $sort = null;
             if( !empty($this->query_params['sort']) ){
 
-                $this->log::info("Sort is on: [{$this->query_params['sort']}]", get_class($this));
+                self::$log->info("Sort is on: [{$this->query_params['sort']}]", get_class($this));
                 $sorts = explode(',', $this->query_params['sort']);
                 foreach($sorts as $s){
 
@@ -1427,7 +1470,7 @@
             $range = null;
             if(!empty($this->query_params['date_range_from']) ){
 
-                $this->log::info("Date Range is on: [{$this->query_params['date_range_from']}:{$this->query_params['date_range_to']}]", get_class($this));
+                self::$log->info("Date Range is on: [{$this->query_params['date_range_from']}:{$this->query_params['date_range_to']}]", get_class($this));
                 $range = [
                     'range' => [
                         $this->config->get('dbm.short_code_date') => [
@@ -1460,10 +1503,10 @@
 
                 $type = Arr::val($sort_map, 'type');
                 if( preg_match('/text/', $type) ){
-                    $this->log::info("Sort Type: [$type] adding .raw" , get_class($this));
+                    self::$log->info("Sort Type: [$type] adding .raw" , get_class($this));
                     $ret = '.raw';
                 }else{
-                    $this->log::info("Sort Type: [$type] leave as is" , get_class($this));
+                    self::$log->info("Sort Type: [$type] leave as is" , get_class($this));
                 }
 
             }else{
@@ -1471,7 +1514,7 @@
                 $ret = (preg_match('/sort_|_exact|_code|_rank|_count/', $field)) ? '' : '.raw';
             }
 
-            $this->log::info("Checking Sort field: [$field] = [$ret]", get_class($this));
+            self::$log->info("Checking Sort field: [$field] = [$ret]", get_class($this));
             return $ret;
 
         }
@@ -1495,7 +1538,7 @@
             if($this->config->get('dbm.elastic_suggestions_show')){
                
                 $show_suggest = (bool)$this->config->get('dbm.elastic_suggestions_show');
-                $this->log::info("Suggest show (DBM) [$search_terms]", get_class($this));
+                self::$log->info("Suggest show (DBM) [$search_terms]", get_class($this));
                
             }else{
 
@@ -1508,7 +1551,7 @@
                 $show_suggest = true;
                 $search_terms = $this->query_params['sug'];
                 $this->config->set('url.qs_array.nobool', 'query,highlight,aggs');
-                $this->log::info("Suggest show (SUG) [$search_terms]", get_class($this));
+                self::$log->info("Suggest show (SUG) [$search_terms]", get_class($this));
 
             }
 
@@ -1562,7 +1605,7 @@
                 $show_moq = true;
                 $search_terms = $this->query_params['moq'];
                
-                $this->log::info("MyOwnQuery overwrites body.query (MOQ) [$search_terms]", get_class($this));
+                self::$log->info("MyOwnQuery overwrites body.query (MOQ) [$search_terms]", get_class($this));
 
             }
 
@@ -1617,7 +1660,7 @@
 			
             if( isset($this->query_params['nlp']) and !empty($this->query_params['nlp']) ){
                
-				$this->log::info("Processing Vector Query (NLP)", get_class($this));
+				self::$log->info("Processing Vector Query (NLP)", get_class($this));
                 $search_vector = $this->query_params['nlp'];
 				$search_vector = json_decode($search_vector, true);
 				//print_r($search_vector); die;
@@ -1634,8 +1677,8 @@
                         'includes' => $this->query_params['field_list_array'],
 						'excludes' => $this->query_params['excludes_field_list'],
                     ],
-					"size" => @$this->query_params['pl'] ?: $search_vector['knn'],
-						"knn" => [
+					"size" => @$this->query_params['size'] ?: $search_vector['knn'],
+					"knn" => [	// knn clause should appear first for best results
 						"field" => $search_vector['vfield'],
 							"query_vector" => $search_vector['vector'],
 						"k"	=> $search_vector['knn'],
@@ -1643,36 +1686,65 @@
 						"boost" => $vector_boost,
 						//"filter" => '',
 					],
+					"query" => [],
 
 				];
 				
 				// E.G. SF1=contributor&ST1=matthew
 				if( !empty($this->query_params['search_query']) ){
 					
-					$stdq = [
-						"query" => [
-							"bool" => [
+				// GET 'VECTOR SHOULD' FROM DBM
+					$vector_should = $this->config->get('dbm.elastic_vector_should');
+					if( empty($vector_should) ){
+						
+						$vector_should = [
 								"should" => [								
 									"query_string" => [
-										"query" => $this->query_params['search_query'],
-										"boost" => $search_boost,
-										//"default_operator" =>  $this->config->get('dbm.default_search_operator') ?: 'AND',	// should = ANY of the terms
-										"minimum_should_match" => @$this->config->get('dbm.default_min_should_match') ?: '2<75%', 	//default_min_should_match
+									"query" => 'search_query',
+									"boost" => 'search_boost',
 									],
 								],
-								//"filter" => '',		
-							],
+						];
+					}
+				
+					$flat_should = json_encode($vector_should, JSON_PRETTY_PRINT);
+					$flat_should = str_replace('search_query', addslashes( $this->query_params['search_query']), $flat_should);
+					$flat_should = str_replace('search_terms', addslashes( $this->query_params['search_terms']), $flat_should);
+					$flat_should = str_replace('search_boost', $search_boost, $flat_should);
+					$flat_should = str_replace("\\'", "'", $flat_should);   // single quotes inside JSON sting don't need to be escaped!
+
+					preg_match_all('/yyyymmdd\[(.*)?\]/',$flat_should, $matches);
+					foreach($matches[0] as $key=>$val){
+
+						$d = $matches[1][$key];
+						$dte = hf::displayDate('Ymd', $d);
+						$flat_should = str_replace($val, $dte, $flat_should);
+					}
+			
+					$vector_should = json_decode($flat_should, true);
+					
+					$stdq = [
+						"query" => [
+							"bool" => $vector_should,
 						],
 				];
                
-					$vector_query += $stdq;
+					if(empty($this->config->get('dbm.default_min_should_match'))){
+						Arr::del($stdq, 'query.bool.should.query_string.minimum_should_match');
+					}
+					
+					$vector_query['query'] = $stdq['query'];
 					
 					// E.G. &SQF=/format_code:BB/
 					if( !empty($this->query_params['search_filters_array']) ){
 					
-						Arr::set($vector_query, 'query.bool.filter', $this->query_params['search_filters_array']);
+						Arr::set($vector_query, 'knn.filter', $this->query_params['search_filters_array']);
 						
 					}
+					
+				}else{
+					
+					Arr::del($vector_query, 'query');
 					
 				}
 				
@@ -1687,7 +1759,7 @@
 
             }else{
 				
-				$this->log::error("VectorQuery missing? (NLP)", get_class($this));
+				self::$log->error("VectorQuery missing? (NLP)", get_class($this));
 				
 			}
             
@@ -1703,7 +1775,7 @@
             $highlight = null;
             if($this->config->get('dbm.elastic_highlight_show') and $this->checkISBNQuery() == false){
 
-                $this->log::info("Highlight is on.", get_class($this));
+                self::$log->info("Highlight is on.", get_class($this));
                 $highlight = $this->config->get('dbm.elastic_highlight');
 
             }

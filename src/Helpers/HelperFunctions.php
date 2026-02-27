@@ -2,7 +2,6 @@
     namespace MattyLabs\XMLAdapter\Helpers;
 
     use DateTime;
-    use MattyLabs\XMLAdapter\Helpers\Arr as Arr;
 
 /**
  *  What a lot of Emperor's new clothes this class stuff is - apparently if I do something simple a lot of times like padding digits I have to make this a trait of method of an extended sub-something so that no-one can find out what its doing!
