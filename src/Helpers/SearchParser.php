@@ -427,7 +427,7 @@
                     $val 			= str_replace('[', '', $val);
                     $val 			= str_replace(']', '', $val);
 
-                    // remove commas - AND - OR - NOT from phrases
+                    // Phrase searches "remove commas" - AND - OR - NOT from phrases
                     $parts = hf::getDelimStr($val, '"', '"', true);
 
                     foreach(explode('|', $parts) as $p) {
@@ -450,11 +450,7 @@
                     }
 
                     // if fuzzy is set add trailing~ to each single term
-                    $single_terms = preg_replace('/,|( and )|( or )|( not )|( to )|([\s\W]+)/i', ' ', $single_terms);
-                    $singles = explode(' ', $single_terms);
-                    foreach($singles as $s) {
-                        $s = trim($s);
-                        if(!empty($params['fuzzy'])) {		//N.B. '0' is treated as empty and '&FUZZY=false' will be treated as 'on'
+					if(!empty($params['fuzzy'])) {	
 
                             $fuzziness = $params['fuzzy'] ?:  $this->config['dbm.default_fuzziness'];
 
@@ -469,13 +465,29 @@
                                     $fuzz = '~';
                             }
 
-                            $val = str_replace($s, $s . $fuzz, $val);
+						$single_terms = preg_replace('/,|( and )|( or )|( not )|( to )/i', ' ', $single_terms);
+						$singles = explode(' ', $single_terms);
+						$new_terms = array();
+						foreach($singles as $s) {
+							
+							$s = trim($s);
+							$new_s = preg_replace("/\'\w{1,2}$/", '', $s);
+							$new_s = "$new_s$fuzz";
+							$new_terms[$s] = $new_s;
+							
+						}
+
+						foreach($new_terms as $old=>$new){		
+
+							$val = str_replace($old, $new, $val);
+
+						}	
+						
                             $val = str_replace("~~", "~", $val);	// e.g. where the query contains the same term twice!
                             $val = str_replace("~2~2", "~2", $val);	// e.g. where the query contains the same term twice!
                             $fuzz = '';
 
                         }
-                    }
 
                     /* EEK! Converting commas to ' OR ' is generally a confusing/bad thing, but ISBN lists separated
                         by commas need to be permitted - best option is to ensure there are spaces between each ISBN

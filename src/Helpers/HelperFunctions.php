@@ -258,33 +258,44 @@
 			
 			//print_r($header);
             
+            $curl = curl_init();
+		
             $curl_options = [
     
-                CURLOPT_CUSTOMREQUEST => "$rq",
-			    CURLOPT_POSTFIELDS => "$body",
+				CURLOPT_CUSTOMREQUEST      => $rq,
                 CURLOPT_URL	=> $rurl,
-                CURLOPT_HEADER => false,	// 0 removes headers from response leaving just the JSON
+				CURLOPT_HEADER             => false,
                 CURLOPT_HTTPHEADER => $header,
                 CURLOPT_CONNECTTIMEOUT_MS => $ct,
 				CURLOPT_TIMEOUT_MS => $to,
-                CURLOPT_RETURNTRANSFER => true, // sets curl_exec() to return request body e.g. as $response
+				CURLOPT_RETURNTRANSFER     => true,
                 CURLOPT_FAILONERROR => false,
                 CURLOPT_FOLLOWLOCATION => true,
                 CURLOPT_ENCODING => '',	
                 
                 CURLOPT_VERBOSE => false,
-                //CURLOPT_CAINFO => "",
-                CURLOPT_SSL_VERIFYPEER => false,	// 0 for testing :)
+				CURLOPT_SSL_VERIFYPEER     => false,
                 CURLOPT_SSL_VERIFYHOST => false,
-                //CURLOPT_STDERR => ($f = fopen("d:/temp/curl-client.txt", "a")),
+				CURLOPT_FORBID_REUSE       => true,
+				CURLOPT_FRESH_CONNECT      => true,
                 
             ];
             
-            //print_r($curl_options); //die;
-            $curl = curl_init();
+            if ( preg_match("/PUT|POST/", (@$options['request_type'] ?: ''))  && $body !== '') {
+				$curl_options[CURLOPT_POSTFIELDS] = $body;
+			}
+
+			curl_setopt_array($curl, $curl_options);
+			
+			//$x = print_r($curl_options, true); echo "<!--getRest:curl opts: $x -->\r\n"; //die;
+			
             curl_setopt_array($curl, $curl_options);	
             $response = curl_exec($curl);
             $info = curl_getinfo($curl);
+			$errno = curl_errno($curl);
+			$error = curl_error($curl);
+			
+			$curl = null; // PHP 8+ replacement for curl_close()
 
             if( $info['http_code'] == 200 ){
                 // return $response
@@ -297,51 +308,36 @@
                 
             }
            
-            if (curl_errno($curl)){
+            if ($errno) {
                 
-                $cerr = curl_errno($curl);
-                
-                if(curl_errno($curl) == '28'){
-                    $emsg = "REST request ($cerr) timed out. ct[$ct] to[$to]";
-                }elseif(curl_errno($curl) == '22'){
-                    $emsg = "BAD REST request ($cerr) (http:400)";
-                }else{
-                    $x = print_r($info, true); //echo "<!-- cUrl ERR ($cerr): getinfo: $x --\r\n"; //die;
-                    $emsg = "CURL Err $x";
+				if ($errno == 28) {
+					$emsg = "REST request timed out. ct[$ct] to[$to]";
+				} elseif ($errno == 22) {
+					$emsg = "BAD REST request";
+				} else {
+					$emsg = "CURL Err [$errno] $error";
                 }
 
-                $error_array = [
+				return json_encode([
                     'errordetails' => [
                         'error_rest'    => true,
-                        'errorcode'     => $cerr,
-                        'errormessage'  => "CURL Error: $emsg",
+						'errorcode'    => $errno,
+						'errormessage' => "CURL Error: [$emsg]",
                     ]
-                ];
-               
-                $response = json_encode($error_array);
-                return $response;
-                
-            } else {
+				]);
+			}
 
-                if( $info['http_code'] == 0 or $info['size_download'] < 1){
-
-                    $emsg = "No data received: [{$info['url']}]";
-                    $error_array = [
+			if (($info['http_code'] ?? 0) == 0 || ($info['size_download'] ?? 0) < 1) {
+				return json_encode([
                         'errordetails' => [
                             'error_rest'    => true,
-                            'errorcode'     => curl_errno($curl),
-                            'errormessage'  => "Unknown Error: $emsg",
+						'errorcode'    => 1,
+						'errormessage' => "URL Error: [No data received: {$rurl}]",
                         ]
-                    ];
+				]);
+			}
                    
-                    $response = json_encode($error_array); 
                     return $response;
-                }
-              //$skip = intval(curl_getinfo($curl, CURLINFO_HEADER_SIZE)); 
-              //$responseHeader = substr($response, 0, $skip);
-              //$response = substr($response,$skip);
-
-            }  
             
         }
 
