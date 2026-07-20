@@ -289,7 +289,6 @@
 			
 			//$x = print_r($curl_options, true); echo "<!--getRest:curl opts: $x -->\r\n"; //die;
 			
-            curl_setopt_array($curl, $curl_options);	
             $response = curl_exec($curl);
             $info = curl_getinfo($curl);
 			$errno = curl_errno($curl);
