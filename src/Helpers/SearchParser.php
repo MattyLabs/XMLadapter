@@ -1687,7 +1687,8 @@
 		 *  - E.G.: xmla-nlp.php/?DBM=blackthorn-main&NLQ=lazy fox&DEBUG=on,query&FIELDS=vector_text,ref_no,ctitle,sort_date,thema_subject,thema_subj_code&VFIELD=vector_384&KNN=5&KNC=10
 		 *  - see: https://www.elastic.co/search-labs/blog/vector-search-set-up-elasticsearch	
          */
-        public function getVectorQuery(){
+        public function getVectorQuery()
+		{
 			
 		//print_r($this->query_params); //die;	 $this->config->get('dbm.default_vector_boost')
 			
@@ -1698,9 +1699,9 @@
 				$search_vector = json_decode($search_vector, true);
 				//print_r($search_vector); die;
 				$search_terms = @$this->query_params['search_terms'] ?: @$this->query_params['nlq'] ?: '';
-				$boost = @$this->config->get('dbm.default_vector_boost') ?: "5.0:0.5";
+				$boost = @$this->config->get('dbm.default_vector_boost') ?: "5.1:2.1";
 				if( !preg_match("/(\d:\d)/", $boost) ){
-					$boost = "5.0:0.5";
+					$boost = "5.0:2.0";
 				}
 				$vector_boost = explode(':', $boost)[0];
 				$search_boost = explode(':', $boost)[1];
@@ -1711,88 +1712,128 @@
 						'excludes' => $this->query_params['excludes_field_list'],
                     ],
 					"size" => @$this->query_params['size'] ?: $search_vector['knn'],
-					"knn" => [	// knn clause should appear first for best results
-						"field" => $search_vector['vfield'],
-							"query_vector" => $search_vector['vector'],
-						"k"	=> $search_vector['knn'],
-						"num_candidates" => $search_vector['knc'],
-						"boost" => $vector_boost,
-						//"filter" => '',
-					],
-					"query" => [],
+					"query" => $this->config->get('dbm.elastic_vector_query'),
 
 				];
 				
-				// E.G. SF1=contributor&ST1=matthew
-				if( !empty($this->query_params['search_query']) ){
+			// FILTERS?
+				//$x = print_r(Arr::search($vector_query, 'filter'), true);
+				//echo "<!-- $x -->\r\n";
 					
-				// GET 'VECTOR SHOULD' FROM DBM
-					$vector_should = $this->config->get('dbm.elastic_vector_should');
-					if( empty($vector_should) ){
-						
-						$vector_should = [
-								"should" => [								
-									"query_string" => [
-									"query" => 'search_query',
-									"boost" => 'search_boost',
-									],
-								],
-						];
-					}
-				
-					$flat_should = json_encode($vector_should, JSON_PRETTY_PRINT);
-					$flat_should = str_replace('search_query', addslashes( $this->query_params['search_query']), $flat_should);
-					$flat_should = str_replace('search_terms', addslashes( $this->query_params['search_terms']), $flat_should);
-					$flat_should = str_replace('search_boost', $search_boost, $flat_should);
-					$flat_should = str_replace("\\'", "'", $flat_should);   // single quotes inside JSON sting don't need to be escaped!
+				$filter_path = Arr::search($vector_query, 'filter')['path'];
+				$filter_val  = Arr::search($vector_query, 'filter')['value'];
 
-					preg_match_all('/yyyymmdd\[(.*)?\]/',$flat_should, $matches);
-					foreach($matches[0] as $key=>$val){
-
-						$d = $matches[1][$key];
-						$dte = hf::displayDate('Ymd', $d);
-						$flat_should = str_replace($val, $dte, $flat_should);
-					}
-			
-					$vector_should = json_decode($flat_should, true);
+				if( $filter_path and empty($filter_val) ){
 					
-					$stdq = [
-						"query" => [
-							"bool" => $vector_should,
-						],
-				];
-               
-					if(empty($this->config->get('dbm.default_min_should_match'))){
-						Arr::del($stdq, 'query.bool.should.query_string.minimum_should_match');
-					}
-					
-					$vector_query['query'] = $stdq['query'];
-					
-					// E.G. &SQF=/format_code:BB/
 					if( !empty($this->query_params['search_filters_array']) ){
 					
-						Arr::set($vector_query, 'knn.filter', $this->query_params['search_filters_array']);
+						Arr::set($vector_query, $filter_path, $this->query_params['search_filters_array']);
+						
+					}else{
+						
+						Arr::del($vector_query, $filter_path);
+						
+					}
+					}
+				
+			// SEARCH TERMS? 
+				//$x = print_r(Arr::search_all_values($vector_query, 'search_terms'), true);
+				//echo "<!-- $x -->\r\n";
+				$search_term_paths = Arr::search_all_values($vector_query, 'search_terms');
+				$keywords = $this->firstKeywords(@$this->query_params['nlq'] ?: '');
+				foreach($search_term_paths as $path){
+
+					Arr::set($vector_query, $path, @$this->query_params['search_terms'] ?: $keywords);
+
+					}
+			
+			// SEARCH QUERY?
+				$search_query_paths = Arr::search_all_values($vector_query, 'search_query');
+				foreach($search_query_paths as $path){
+					
+					Arr::set($vector_query, $path, @$this->query_params['search_query'] );
+               
+					}
+					
+					
+			// NULLs? E.G. SF1=cindex&ST1=null (i.e. just do the vectors)
+				$nulls = Arr::search_all_values($vector_query, 'null');
+				foreach($nulls as $null){
+					
+					if( preg_match("/(multi_match)/i", $null) ){
+						
+						$n = rtrim(explode('multi_match', $null)[0], '[.]');
+						//echo "<!-- $n -->\r\n";		
+						Arr::del($vector_query, $n);
+					
+						
+					}elseif( preg_match("/(query_string)/i", $null) ){
+						
+						$n = rtrim(explode('query_string', $null)[0], '[.]');
+						//echo "<!-- $n -->\r\n";		
+						Arr::del($vector_query, $n);
+					}
 						
 					}
 					
-				}else{
 					
-					Arr::del($vector_query, 'query');
+			// DEFAULT_KEYWORD_FIELDS? set in the DBM for a multi_match search
+				//$x = print_r(Arr::search_all_values($vector_query, 'search_terms'), true);
+				//echo "<!-- $x -->\r\n";
+				$search_term_paths = Arr::search_all_values($vector_query, 'default_keyword_fields');
+				foreach($search_term_paths as $path){
+					
+					Arr::set($vector_query, $path, @$this->config->get('dbm.default_keyword_fields') ?: ['cindex']);
 					
 				}
 				
-				// E.G. &SQF=/format_code:BB/
-				if( !empty($this->query_params['search_filters_array']) ){
+			// DEFAULT_SEARCH_TYPE? set in the DBM for a multi_match search
+				//$x = print_r(Arr::search_all_values($vector_query, 'search_terms'), true);
+				//echo "<!-- $x -->\r\n";
+				$search_term_paths = Arr::search_all_values($vector_query, 'default_search_type');
+				foreach($search_term_paths as $path){
 					
-					Arr::set($vector_query, 'knn.filter', $this->query_params['search_filters_array']);
+					Arr::set($vector_query, $path, @$this->config->get('dbm.default_search_type') ?: ['best_fields']);
 					
 				}
                 
-                return $vector_query;
+			// BOOSTS: Keywords
+				//$x = print_r(Arr::search_all_values($vector_query, 'search_terms'), true);
+				//echo "<!-- $x -->\r\n";
+				$search_term_paths = Arr::search_all_values($vector_query, 'default_vector_boost');
+				foreach($search_term_paths as $path){
 
-            }else{
+					if( preg_match("/(multi_match|query_string)/i", $path) ){
+						Arr::set($vector_query, $path, $search_boost);
+					}elseif( preg_match("/(knn)/i", $path) ){
+						Arr::set($vector_query, $path, $vector_boost);
+					}
 				
-				self::$log->error("VectorQuery missing? (NLP)", get_class($this));
+				}	
+				
+			// KNN - VECTOR QUERY
+				$filter_path = Arr::search($vector_query, 'knn')['path'];
+				if( !empty($filter_path) ){
+					
+					Arr::set($vector_query, "$filter_path.field", $search_vector['vfield'] );
+					Arr::set($vector_query, "$filter_path.query_vector", $search_vector['vector'] );
+					Arr::set($vector_query, "$filter_path.k", $search_vector['knn'] );
+					Arr::set($vector_query, "$filter_path.num_candidates", $search_vector['knc'] );
+					
+				}
+				
+				if( empty($search_vector['vector']) ){
+					
+					$filter_path = str_replace(".knn", '', $filter_path);
+					//echo "<!-- $filter_path -->\r\n";
+					self::$log->info('Vector embeddings not supplied - removing knn...', get_class($this));
+					Arr::del($vector_query, $filter_path);
+					
+					
+				}
+				
+				//print_r($vector_query); die;
+				return $vector_query;
 				
 			}
             
@@ -1835,6 +1876,50 @@
             return $this->query_params;
 
         }
+		
+		private function firstKeywords(string $text, int $count = 10, int $minLength = 3): string
+		{
+			$stopWords = [
+				'about', 'after', 'again', 'also', 'because', 'before',
+				'being', 'between', 'could', 'from', 'have', 'into',
+				'more', 'other', 'over', 'that', 'their', 'there',
+				'these', 'they', 'this', 'those', 'through', 'under',
+				'very', 'were', 'what', 'when', 'where', 'which',
+				'while', 'with', 'would', 'your'
+			];
+
+			$text = html_entity_decode(strip_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+			preg_match_all('/\p{L}+(?:[\'’-]\p{L}+)*/u', $text, $matches);
+
+			$keywords = [];
+
+			foreach ($matches[0] as $word) {
+				$lower = mb_strtolower($word);
+
+				if (
+					mb_strlen($word) > $minLength &&
+					!in_array($lower, $stopWords, true)
+				) {
+					$keywords[] = $word;
+
+					if (count($keywords) >= $count) {
+						break;
+					}
+				}
+			}
+			
+			if( !empty($keywords) ){
+				
+				return implode(' ', $keywords);
+				
+			}else{
+				
+				return '';
+				
+			}
+			
+		}
         
     }
 

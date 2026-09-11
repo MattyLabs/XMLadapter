@@ -233,6 +233,18 @@
         $log_line = "";
 
         if ( ! empty( $log_entry ) ) {
+			
+		// Roll all the vectors in query_vector onto a single line for ease of reading the log.
+			if (isset($log_entry['message']) && is_string($log_entry['message'])) {
+				$log_entry['message'] = preg_replace_callback(
+					'/("query_vector"\s*:\s*)\[\s*([^\[\]]*?)\s*\]/s',
+					function ($matches) {
+						$vector = preg_replace('/\s+/', ' ', trim($matches[2]));
+						return $matches[1] . '[ ' . $vector . ' ]';
+					},
+					$log_entry['message']
+				);
+			}
 
             /* Make sure the log entry is stringified */
             $log_entry = array_map( function( $v ) { return print_r( $v, true ); }, $log_entry );

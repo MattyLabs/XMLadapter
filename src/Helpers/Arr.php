@@ -259,6 +259,37 @@
             return $outputArray;
         }
                     
+		 /**
+         *  Returns an array of paths to keys (in dot notation) for matching values
+		 */
+		public static function search_all_values(
+			array $haystack,
+			$needle,
+			string $path = '',
+			array &$outputArray = []
+		): array {
+			foreach ($haystack as $key => $value) {
+				$currentPath = $path === ''
+					? (string) $key
+					: $path . '.' . $key;
+
+				// Use strict comparison to avoid type coercion.
+				if ($value === $needle) {
+					$outputArray[] = $currentPath;
+				}
+
+				if (is_array($value) || is_object($value)) {
+					static::search_all_values(
+						(array) $value,
+						$needle,
+						$currentPath,
+						$outputArray
+					);
+				}
+			}
+
+			return $outputArray;
+		}
 
         /**
          * returns an array of values for all matching keys in array
@@ -360,18 +391,47 @@
          * @param array $array
          * @param $key
          */
-        public static function del(array &$array, $key){
-
+        public static function del(array &$array, string $key): bool
+		{
             $parts = explode('.', $key);
-            while( count($parts) > 1 ){
-                $p = array_shift($parts);
-                if(isset($array[$p]) and is_array($array[$p])){
-                    $array = &$array[$p];
+			$current = &$array;
+
+			// Navigate to the array containing the target.
+			while (count($parts) > 1) {
+				$part = array_shift($parts);
+
+				if (
+					!array_key_exists($part, $current) ||
+					!is_array($current[$part])
+				) {
+					return false;
+				}
+
+				$current = &$current[$part];
                 }
+
+			$target = array_shift($parts);
+
+			if (!array_key_exists($target, $current)) {
+				return false;
+			}
+
+			// Determine whether the containing array is numerically indexed.
+			$isNumericArray = count(array_filter(
+				array_keys($current),
+				'is_int'
+			)) === count($current);
+
+			unset($current[$target]);
+
+			// Convert indexes such as [1, 2] back to [0, 1].
+			if ($isNumericArray) {
+				$current = array_values($current);
             }
 
-            unset($array[array_shift($parts)]);
+			unset($current); // Break the reference.
 
+			return true;
         }
 
         /**

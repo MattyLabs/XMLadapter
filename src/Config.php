@@ -106,8 +106,8 @@
             $this->log =  new Logger\SimpleLogger();
             /* VERSION: 3.~ Client free 2.~ for PHP v7+ 1.~ for PHP v5.6+. */
             /* - v3.0+ - version friendly without official Elastic client  */
-			/* - 2026-07-20: really-reallyminorbugfix */
-            $this->log::info("Initialising Config: [XMLAdapter v3.1.4]", get_class($this));
+			/* - 2026-09-11: Hybrid Search */
+            $this->log::info("Initialising Config: [XMLAdapter v3.1.5]", get_class($this));
 
         // Load $params
             if($params){
