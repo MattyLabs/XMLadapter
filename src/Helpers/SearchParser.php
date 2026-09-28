@@ -1741,6 +1741,7 @@
 				//echo "<!-- $x -->\r\n";
 				$search_term_paths = Arr::search_all_values($vector_query, 'search_terms');
 				$keywords = $this->firstKeywords(@$this->query_params['nlq'] ?: '');
+				self::$log->info("NLQ Extracted Keywords...[$keywords]", get_class($this));
 				foreach($search_term_paths as $path){
 
 					Arr::set($vector_query, $path, @$this->query_params['search_terms'] ?: $keywords);
@@ -1793,7 +1794,7 @@
 				$search_term_paths = Arr::search_all_values($vector_query, 'default_search_type');
 				foreach($search_term_paths as $path){
 					
-					Arr::set($vector_query, $path, @$this->config->get('dbm.default_search_type') ?: ['best_fields']);
+					Arr::set($vector_query, $path, @$this->config->get('dbm.default_search_type') ?: ['cross_fields']);
 					
 				}
                 
@@ -1877,49 +1878,674 @@
 
         }
 		
-		private function firstKeywords(string $text, int $count = 10, int $minLength = 3): string
+		private function firstKeywords(
+			?string $text,
+			int $descriptionCount = 10,
+			int $titleCount = 6,
+			int $minLength = 3
+		): string
 		{
+			try {
+
+				if ($text === null) {
+					return '';
+				}
+
+				$text = trim(strip_tags($text));
+
+				if ($text === '') {
+					return '';
+				}
+
+				/*
+				 * Prevent silly / accidental parameter values.
+				 */
+				if ($descriptionCount < 1) {
+					$descriptionCount = 10;
+				}
+
+				if ($titleCount < 1) {
+					$titleCount = 6;
+				}
+
+				if ($minLength < 1) {
+					$minLength = 1;
+				}
+
 			$stopWords = [
-				'about', 'after', 'again', 'also', 'because', 'before',
-				'being', 'between', 'could', 'from', 'have', 'into',
-				'more', 'other', 'over', 'that', 'their', 'there',
-				'these', 'they', 'this', 'those', 'through', 'under',
-				'very', 'were', 'what', 'when', 'where', 'which',
-				'while', 'with', 'would', 'your'
+					'a', 'an', 'and', 'are', 'as', 'at',
+					'be', 'been', 'being', 'but', 'by',
+					'can', 'could',
+					'did', 'do', 'does',
+					'for', 'from',
+					'had', 'has', 'have', 'he', 'her', 'his',
+					'i', 'if', 'in', 'into', 'is', 'it', 'its',
+					'me', 'more', 'most', 'my',
+					'no', 'not',
+					'of', 'on', 'or', 'other', 'our', 'out', 'over',
+					'she', 'so',
+					'that', 'the', 'their', 'them', 'there', 'these',
+					'they', 'this', 'those', 'through', 'to',
+					'under', 'us',
+					'very',
+					'was', 'we', 'were', 'what', 'when', 'where',
+					'which', 'while', 'who', 'why', 'will', 'with',
+					'would',
+					'you', 'your',
+
+					// Common description noise
+					'about', 'after', 'again', 'also', 'because',
+					'before', 'maybe', 'something', 'whatever',
+					'theres', 'here'
 			];
 
-			$text = html_entity_decode(strip_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+				/*
+				 * Try structured fields first.
+				 */
+				$description = $this->extractDocumentField(
+					$text,
+					'Description',
+					['Title', 'Themes', 'Author', 'ISBN']
+				);
 
-			preg_match_all('/\p{L}+(?:[\'’-]\p{L}+)*/u', $text, $matches);
+				$title = $this->extractDocumentField(
+					$text,
+					'Title',
+					['Themes', 'Author', 'ISBN']
+				);
+
+				$author = $this->extractDocumentField(
+					$text,
+					'Author',
+					['ISBN']
+				);
+
+				$isStructured =
+					$description !== '' ||
+					$title !== '' ||
+					$author !== '';
+
+				/*
+				 * ---------------------------------------------------------
+				 * Free-text fallback
+				 * ---------------------------------------------------------
+				 */
+				if (!$isStructured) {
+
+					$keywords = $this->bestKeywords(
+						$text,
+						$descriptionCount,
+						$minLength,
+						$stopWords
+					);
+
+					return !empty($keywords)
+						? implode(' ', $keywords)
+						: '';
+				}
+
+				/*
+				 * ---------------------------------------------------------
+				 * Structured text
+				 * ---------------------------------------------------------
+				 */
 
 			$keywords = [];
 
+				/*
+				 * First contributor
+				 */
+				if ($author !== '') {
+
+					$contributor = $this->firstContributor($author);
+
+					if ($contributor !== '') {
+
+						foreach (
+							$this->extractWords($contributor, 1) as $word
+						) {
+							$this->addUniqueKeyword($keywords, $word);
+						}
+					}
+				}
+
+				/*
+				 * Title keywords
+				 */
+				$titleWords = [];
+
+				if ($title !== '') {
+
+					$titleWords = $this->significantWords(
+						$title,
+						$titleCount,
+						$minLength,
+						$stopWords
+					);
+
+					foreach ($titleWords as $word) {
+						$this->addUniqueKeyword($keywords, $word);
+					}
+				}
+
+				/*
+				 * Description keywords
+				 */
+				if ($description !== '') {
+
+					$descriptionWords = $this->bestKeywords(
+						$description,
+						$descriptionCount,
+						$minLength,
+						$stopWords,
+						$titleWords
+					);
+
+					foreach ($descriptionWords as $word) {
+						$this->addUniqueKeyword($keywords, $word);
+					}
+				}
+
+				return !empty($keywords)
+					? implode(' ', $keywords)
+					: '';
+
+			} catch (\Throwable $e) {
+
+				/*
+				 * Keyword generation must never break the calling process.
+				 *
+				 * Uncomment / replace with your own logging if wanted:
+				 *
+				 * error_log(
+				 *     'firstKeywords(): ' .
+				 *     $e->getMessage()
+				 * );
+				 */
+
+				return '';
+			}
+		}
+
+
+		/**
+		 * Extract a named DOCUMENT field.
+		 */
+		private function extractDocumentField(
+			string $text,
+			string $field,
+			array $nextFields
+		): string
+		{
+			if ($text === '' || $field === '') {
+				return '';
+			}
+
+			$needle = $field . ':';
+
+			$start = stripos($text, $needle);
+
+			if ($start === false) {
+				return '';
+			}
+
+			$start += strlen($needle);
+
+			$textLength = strlen($text);
+
+			if ($start >= $textLength) {
+				return '';
+			}
+
+			$end = $textLength;
+
+			foreach ($nextFields as $nextField) {
+
+				if (!is_string($nextField) || $nextField === '') {
+					continue;
+				}
+
+				$pos = stripos(
+					$text,
+					$nextField . ':',
+					$start
+				);
+
+				if ($pos !== false && $pos < $end) {
+					$end = $pos;
+				}
+			}
+
+			if ($end <= $start) {
+				return '';
+			}
+
+			$value = substr(
+				$text,
+				$start,
+				$end - $start
+			);
+
+			if ($value === false) {
+				return '';
+			}
+
+			return trim($value);
+		}
+
+
+		/**
+		 * Extract the first contributor.
+		 *
+		 * Example:
+		 *
+		 * Fretwell, Peter, author., Fretwell, Lisa, author.
+		 *
+		 * returns:
+		 *
+		 * Fretwell Peter
+		 */
+		private function firstContributor(string $author): string
+		{
+			if ($author === '') {
+				return '';
+			}
+
+			$matches = [];
+
+			$result = preg_match(
+				'/^\s*([^,]+)\s*,\s*([^,]+)/',
+				$author,
+				$matches
+			);
+
+			if (
+				$result !== 1 ||
+				!isset($matches[1], $matches[2])
+			) {
+				return '';
+			}
+
+			$surname = trim((string)$matches[1]);
+			$forename = trim((string)$matches[2]);
+
+			if ($surname === '' && $forename === '') {
+				return '';
+			}
+
+			return trim($surname . ' ' . $forename);
+		}
+
+
+		/**
+		 * Extract ASCII words without requiring valid UTF-8.
+		 *
+		 * Allows internal apostrophes and hyphens:
+		 *
+		 * black-and-white
+		 * first-hand
+		 * don't
+		 */
+		private function extractWords(
+			string $text,
+			int $minLength = 1
+		): array
+		{
+			if ($text === '') {
+				return [];
+			}
+
+			if ($minLength < 1) {
+				$minLength = 1;
+			}
+
+			$matches = [];
+
+			$result = preg_match_all(
+				"/[A-Za-z0-9]+(?:['-][A-Za-z0-9]+)*/",
+				$text,
+				$matches
+			);
+
+			if (
+				$result === false ||
+				$result === 0 ||
+				empty($matches[0]) ||
+				!is_array($matches[0])
+			) {
+				return [];
+			}
+
+			$words = [];
+
 			foreach ($matches[0] as $word) {
-				$lower = mb_strtolower($word);
+
+				if (!is_string($word)) {
+					continue;
+				}
+
+				$word = trim($word, "'-");
+
+				if ($word === '') {
+					continue;
+				}
+
+				if (strlen($word) < $minLength) {
+					continue;
+				}
+
+				$words[] = $word;
+			}
+
+			return $words;
+		}
+
+
+		/**
+		 * Return significant words while retaining source order.
+		 *
+		 * Used primarily for titles.
+		 */
+		private function significantWords(
+			string $text,
+			int $count,
+			int $minLength,
+			array $stopWords
+		): array
+		{
+			if ($text === '' || $count < 1) {
+				return [];
+			}
+
+			$words = $this->extractWords(
+				$text,
+				max(1, $minLength)
+			);
+
+			if (empty($words)) {
+				return [];
+			}
+
+			$stopLookup = [];
+
+			foreach ($stopWords as $stopWord) {
+
+				if (!is_string($stopWord) || $stopWord === '') {
+					continue;
+				}
+
+				$stopLookup[strtolower($stopWord)] = true;
+			}
+
+			$result = [];
+			$seen = [];
+
+			foreach ($words as $word) {
+
+				$normalised = strtolower($word);
+
+				if ($normalised === '') {
+					continue;
+				}
+
+				if (isset($stopLookup[$normalised])) {
+					continue;
+				}
+
+				if (isset($seen[$normalised])) {
+					continue;
+				}
+
+				$seen[$normalised] = true;
+				$result[] = $word;
+
+				if (count($result) >= $count) {
+					break;
+				}
+			}
+
+			return $result;
+		}
+
+
+		/**
+		 * Score text and return the strongest keywords.
+		 *
+		 * Scoring favours:
+		 *
+		 * - repeated terms
+		 * - words occurring early in the text
+		 * - longer / more distinctive terms
+		 * - terms also present in the title
+		 *
+		 * No UTF-8 PCRE mode is used.
+		 */
+		private function bestKeywords(
+			string $text,
+			int $count,
+			int $minLength,
+			array $stopWords,
+			array $titleWords = []
+		): array
+		{
+			if ($text === '' || $count < 1) {
+				return [];
+			}
+
+			$words = $this->extractWords(
+				$text,
+				max(1, $minLength)
+			);
+
+			if (empty($words)) {
+				return [];
+			}
+
+			$stopLookup = [];
+
+			foreach ($stopWords as $stopWord) {
+
+				if (!is_string($stopWord) || $stopWord === '') {
+					continue;
+				}
+
+				$stopLookup[strtolower($stopWord)] = true;
+			}
+
+			$titleLookup = [];
+
+			foreach ($titleWords as $titleWord) {
+
+				if (!is_string($titleWord) || $titleWord === '') {
+					continue;
+				}
+
+				$titleLookup[strtolower($titleWord)] = true;
+			}
+
+			$stats = [];
+			$totalWords = count($words);
+
+			foreach ($words as $position => $word) {
+
+				$normalised = strtolower($word);
+
+				if ($normalised === '') {
+					continue;
+				}
+
+				if (isset($stopLookup[$normalised])) {
+					continue;
+				}
+
+				/*
+				 * Ignore pure numbers.
+				 */
+				if (ctype_digit($normalised)) {
+					continue;
+				}
+
+				if (!isset($stats[$normalised])) {
+
+					$stats[$normalised] = [
+						'word'          => $word,
+						'count'         => 0,
+						'firstPosition' => (int)$position,
+						'score'         => 0.0
+					];
+				}
+
+				$stats[$normalised]['count']++;
+			}
+
+			if (empty($stats)) {
+				return [];
+			}
+
+			foreach ($stats as $normalised => &$item) {
+
+				/*
+				 * Frequency.
+				 */
+				$frequencyScore =
+					(float)$item['count'] * 4.0;
+
+				/*
+				 * Earlier words get a modest bonus.
+				 */
+				$positionRatio =
+					1.0 -
+					(
+						(float)$item['firstPosition'] /
+						(float)max(1, $totalWords)
+					);
+
+				$positionScore =
+					$positionRatio * 3.0;
+
+				/*
+				 * Longer words receive a small distinctiveness bonus.
+				 */
+				$length = strlen($normalised);
+
+				if ($length >= 12) {
+					$lengthScore = 2.5;
+
+				} elseif ($length >= 9) {
+					$lengthScore = 2.0;
+
+				} elseif ($length >= 7) {
+					$lengthScore = 1.5;
+
+				} elseif ($length >= 5) {
+					$lengthScore = 1.0;
+
+				} else {
+					$lengthScore = 0.0;
+				}
+
+				/*
+				 * Strong bonus for terms also occurring in the title.
+				 */
+				$titleScore =
+					isset($titleLookup[$normalised])
+						? 4.0
+						: 0.0;
+
+				$item['score'] =
+					$frequencyScore +
+					$positionScore +
+					$lengthScore +
+					$titleScore;
+			}
+
+			unset($item);
+
+			/*
+			 * Highest score first.
+			 * On equal scores, prefer the earliest occurrence.
+			 */
+			uasort(
+				$stats,
+				static function (array $a, array $b): int {
+
+					$aScore = isset($a['score'])
+						? (float)$a['score']
+						: 0.0;
+
+					$bScore = isset($b['score'])
+						? (float)$b['score']
+						: 0.0;
+
+					if ($aScore == $bScore) {
+
+						$aPos = isset($a['firstPosition'])
+							? (int)$a['firstPosition']
+							: PHP_INT_MAX;
+
+						$bPos = isset($b['firstPosition'])
+							? (int)$b['firstPosition']
+							: PHP_INT_MAX;
+
+						return $aPos <=> $bPos;
+					}
+
+					return $aScore < $bScore ? 1 : -1;
+				}
+			);
+
+			$result = [];
+
+			foreach ($stats as $item) {
 
 				if (
-					mb_strlen($word) > $minLength &&
-					!in_array($lower, $stopWords, true)
+					!isset($item['word']) ||
+					!is_string($item['word']) ||
+					$item['word'] === ''
 				) {
-					$keywords[] = $word;
+					continue;
+				}
 
-					if (count($keywords) >= $count) {
+				$result[] = $item['word'];
+
+				if (count($result) >= $count) {
 						break;
 					}
 				}
+
+			return $result;
 			}
 			
-			if( !empty($keywords) ){
 				
-				return implode(' ', $keywords);
+		/**
+		 * Add a keyword without case-insensitive duplicates.
+		 */
+		private function addUniqueKeyword(
+			array &$keywords,
+			string $word
+		): void
+		{
+			$word = trim($word);
+
+			if ($word === '') {
+				return;
+			}
 				
-			}else{
+			$normalised = strtolower($word);
 				
-				return '';
+			foreach ($keywords as $existing) {
 				
+				if (!is_string($existing)) {
+					continue;
 			}
 			
+				if (strtolower($existing) === $normalised) {
+					return;
+				}
 		}
         
+			$keywords[] = $word;
     }
+        
+    }	// end class
 
